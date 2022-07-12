@@ -1,0 +1,78 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is normal text
+
+```{r}
+#Code goes here ----
+```
+
+Code chunks:
+
+Ctrl + option + i
+
+```{r}
+2 + 3 
+1 + 2
+```
+Cmd + Shift + Enter -- run whole code chunk
+Cmd + Enter         -- run line where cursor is
+
+Call in existing DF "mtcars"
+```{r}
+mtcars
+```
+
+Cmd + Shift + P   -- Open Command Pallet 
+
+Data Types
+
+Categories
+ Nominal
+ Ordinal
+Numeric
+ continuous
+ discrete
+
+Use c function to create a vector (elements of same 'type')
+```{r}
+dbl1 <- c(1, 4, 6, 3)
+dbl2 <- c(1, 4, 6, 3, "x")
+int1 <- c(1L, 4L, 6L, 3L)
+dbl1
+dbl2
+```
+
+Use class function to check type of data in vector
+```{r}
+class(dbl1) #Continuous values
+class(int1) #Discrete values
+```
+
+Use typeof function to check type of data in vector
+```{r}
+typeof(dbl1)
+typeof(dbl2)
+```
+
+Use factor function to see different categories
+```{r}
+char1 <- c("a", "b", "a", "c")
+char2 <- factor(char1)
+char1
+char2
+typeof(char1)
+typeof(char2)
+```
+
+R deals with different types of data in a way that is appropriate for each type
+
+Logical type 
+```{r}
+log1 <- c(TRUE, FALSE, TRUE, FALSE)
+typeof(log1)
+```
+
+
