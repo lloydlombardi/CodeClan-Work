@@ -1,0 +1,65 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(CodeClanData)
+```
+
+```{r}
+#Using groupby() with summarise() ----
+
+new_coders %>% 
+  group_by(reasons_to_code) %>% 
+  summarise(avg_exp_earn = mean(expected_earn))
+```
+
+```{r}
+#Use group_by and mutate functions ----
+new_coders %>% 
+  group_by(job_pref) %>% 
+  mutate(avg_exp_earn = mean(expected_earn))
+```
+
+```{r}
+#Use group_by and mutate functions ----
+#Mutate function needs to be ungrouped!!! ----
+new_coders %>% 
+  group_by(job_pref) %>% 
+  mutate(avg_exp_earn = mean(expected_earn)) %>% 
+  ungroup()
+
+```
+
+```{r}
+#lag() and lead() ----
+#Add a column that takes the value from the row above in a new column
+chinesemeal %>% 
+  mutate(last_year_cals = lag(CaloriesPerDay))
+
+#Add a column that takes the value from the row below in a new column
+chinesemeal %>% 
+  mutate(last_year_cals = lead(CaloriesPerDay))
+
+#Find the difference betweem CaloriesPerDay of each year
+chinesemeal %>% 
+  mutate(diff_cals = CaloriesPerDay - lag(CaloriesPerDay))
+```
+
+
+```{r}
+#Across-function ----
+all_deaths %>% 
+  mutate(book1_GoT = as.logical(book1_GoT))
+
+#Use across function to change all books to LOGICAL
+all_deaths %>% 
+  mutate(across(book1_GoT:book5_DwD, as.logical))
+
+all_deaths %>% 
+  summarise(across(book1_GoT:book5_DwD, sum))
+```
+

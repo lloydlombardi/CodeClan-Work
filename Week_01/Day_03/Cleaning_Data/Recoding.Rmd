@@ -1,0 +1,170 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(CodeClanData)
+```
+
+```{r}
+#if_else ----
+#Select ageyears column and add new column to test students over 12 ----
+students_big %>% 
+  select(ageyears) %>% 
+  mutate(older_than_12 = ageyears >12)
+```
+
+'if_else(CONDITION, value if TRUE, value if FALSE)
+```{r}
+#Add if_else statement in ----
+#If >12 input "Older than 12"
+#Else, input "12 or younger"
+students_big %>% 
+  select(ageyears) %>% 
+  mutate(older_than_12 = if_else(ageyears > 12, 
+                                 "Older than 12", "12 or younger"))
+```
+
+```{r}
+students_big %>% 
+  select(gender) %>% 
+  mutate(gender_recoded = if_else(gender == "M",
+                                  "Male", "Female"))
+```
+
+```{r}
+students_big %>% 
+  mutate(handed = if_else(handed == "R",
+                          "Right", "Left"))
+```
+
+```{r}
+students_big %>% 
+  mutate(favourite_physical_activity = if_else(favourite_physical_activity ==    "Football/Soccer",
+  "Football",favourite_physical_activity))
+```
+
+```{r}
+students_big %>% 
+  mutate(handed = if_else(handed == "R",
+                          "Right", "Left"),
+         favourite_physical_activity = if_else(favourite_physical_activity ==           "Football/Soccer",
+         "Football",favourite_physical_activity))
+```
+
+```{r}
+#Recode ----
+#Use recode function to change first letter to lower case
+students_big %>% 
+  select(travel_to_school) %>% 
+  mutate(travel_to_school_recoded = recode(travel_to_school,
+                                           "Bus" = "bus",
+                                           "Car" = "car",
+                                           "Walk" = "walk"))
+```
+
+```{r}
+#HOW TO COUNT VALUES OF A COLUMN ----
+students_big %>% 
+  count(travel_to_school)
+```
+
+```{r}
+#How to change select values and then set a default! ----
+students_big %>% 
+  select(travel_to_school) %>% 
+  mutate(travel_to_school_recoded = recode(travel_to_school,
+                                           "Bus" = "bus",
+                                           "Car" = "car",
+                                           "Walk" = "walk",
+                                           .default = "other"))
+```
+
+```{r}
+#To change a numerical value, you have to use ' ' ----
+students_big %>% 
+  select(ageyears) %>% 
+  mutate(ageyears_recoded = recode(ageyears,
+                           "12" = 120,
+                           .default = 0))
+```
+
+```{r}
+data <- read.table(header = TRUE, text="
+ subject sex control cond1 cond2 compl
+       1   M     7.9  12.3  10.7  T
+       2   F     6.3  10.6  11.1  T
+       3   F     9.5  13.1  13.8  N
+       4   M    11.5  13.4  12.9  F
+")
+```
+
+```{r}
+#TASK ----
+data %>% 
+  mutate(subject = recode(subject,
+                          "1" = "001",
+                          "2" = "002",
+                          "3" = "003",
+                          "4" = "004"),
+         sex = recode(sex,
+                      "M" = "Male",
+                      "F" = "Female"),
+         compl = recode(compl,
+                        "T" = "True",
+                        "F" = "False",
+                        .default = NA_character_)) #Have to specify that NA is a CHARACTER ----
+```
+
+```{r}
+#case_when() function ----
+x <- 1:10
+#Change all no. <= 5 into 'A'
+case_when(x <= 5 ~ "A")
+
+#Change x <=5 to 'A' and x<=7 to 'B'
+case_when(x <= 5 ~ "A",
+          x<= 7 ~ "B")
+
+#Change x <=5 to 'A' and x<=7 to 'B' and everything else to 'C'
+case_when(x <= 5 ~ "A",
+          x<= 7 ~ "B",
+          TRUE ~ "C")
+
+#There can be issues if the order changes
+case_when(x <= 7 ~ "A",
+          x<= 5 ~ "B",
+          TRUE ~ "C")
+```
+
+
+```{r}
+#Using case_when() to set different parameters ----
+students_big %>% 
+  select(ageyears) %>% 
+  mutate(
+    age_divisible = case_when(
+      ageyears %% 2 == 0 ~ "Even",
+      ageyears %% 3 == 0 ~ "Divisible by 3",
+      ageyears %% 5 == 0 ~ "Divisible by 5",
+      TRUE               ~ "Other number"
+    )
+  )
+```
+
+```{r}
+#Same as above but using as.characters to convert numbers to characters ----
+students_big %>% 
+  select(ageyears) %>% 
+  mutate(
+    ageyears = case_when(
+      ageyears %% 2 == 0 ~ "Even",
+      ageyears %% 3 == 0 ~ "Divisible by 3",
+      ageyears %% 5 == 0 ~ "Divisible by 5",
+      TRUE               ~ as.character(ageyears)
+    )
+  )
+```

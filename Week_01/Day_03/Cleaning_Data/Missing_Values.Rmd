@@ -1,0 +1,210 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(CodeClanData)
+```
+
+```{r}
+#Read in comms_data csv ----
+comms_data
+```
+
+```{r}
+#Missing Not at Random - Analysis Can Accommodate ----
+```
+
+```{r}
+#Missing at Random - Analysis Can Be OK ----
+```
+
+```{r}
+#Missing Not at Random - Bad News for Analysis ----
+```
+
+```{r}
+#Missing values can cause problems to numerical operators ----
+NA + 2
+mean(c(1, 2, 3, 4, NA))
+```
+
+```{r}
+#Types of missing values ----
+NA         #Explicity code missingness
+NaN        #Not a Number
+'Unknown'  #Character representation of an unknown value
+NULL       #Complete lack of a value
+```
+
+```{r}
+#How to drop ANY rows with NA values ----
+#This approach could lose a LOT of data
+comms_data %>% 
+  drop_na()
+```
+
+```{r}
+#Replace NA's with something 'sensible' like mean----
+#Pull column to work with
+#Set NA REMOVE to TRUE
+comms_data %>% 
+  pull(monthly_charges) %>% 
+  mean(na.rm = TRUE)
+```
+
+```{r}
+#Replace NA's with something 'sensible' like median----
+#Pull column to work with
+#Set NA REMOVE to TRUE
+comms_data %>% 
+  pull(monthly_charges) %>% 
+  median(na.rm = TRUE)
+```
+
+```{r}
+#Replace NA's with something 'sensible' like range----
+#Pull column to work with
+#Set NA REMOVE to TRUE
+comms_data %>% 
+  pull(monthly_charges) %>% 
+  range(na.rm = TRUE)
+```
+
+```{r}
+#Replace NA's with something 'sensible' like min/max----
+#Pull column to work with
+#Set NA REMOVE to TRUE
+#Calculate min and max values
+#Calculate difference
+min_charge <- comms_data %>% 
+  pull(monthly_charges) %>% 
+  min(na.rm = TRUE)
+
+max_charge <- comms_data %>% 
+  pull(monthly_charges) %>% 
+  max(na.rm = TRUE)
+
+max_charge - min_charge
+```
+
+```{r}
+#Use summary function to find mean, median, range etc ----
+summary(comms_data)
+```
+
+```{r}
+#Use is.na function ----
+is.na(NA)
+is.na(NaN)
+```
+
+```{r}
+#Use filter to look at monthly_charges column ---- 
+comms_data %>% 
+  filter(is.na(monthly_charges))
+```
+
+```{r}
+#Find how many NA values in monthly_charges column ----
+#Use summarise function to return single value
+#Use count and sum
+comms_data %>% 
+  summarise(count = sum(is.na(monthly_charges)))
+```
+
+```{r}
+comms_data %>% 
+  filter(is.na(monthly_charges))
+comms_data %>% 
+  pull("monthly_charges") %>% 
+  is.na() %>% 
+  mean()
+
+comms_data %>% 
+  summarise(count = sum(is.na(monthly_charges)),
+            count = mean(is.na(monthly_charges)))
+```
+
+```{r}
+comms_data %>% 
+  drop_na(monthly_charges)
+```
+
+
+```{r}
+#Add new columns that coalesces NA with median and mean----
+#Coalesce (thing to fix, thing to fix it with)
+#Create new object
+#Create new column that coalesces median
+#Create new column that coalesces mean
+#Place new columns after monthly_charges
+comms_data <- clean_names(comms_data)
+comms_data_imputed_values <- comms_data %>% 
+  mutate(monthly_charges2 = coalesce(monthly_charges, 
+                                     median(monthly_charges, na.rm = TRUE)),
+         monthly_charges3 = coalesce(monthly_charges, 
+                                     mean(monthly_charges, na.rm = TRUE)),
+         .after = monthly_charges)
+
+comms_data_imputed_values
+```
+
+```{r}
+ggplot(comms_data_imputed_values, aes(customer_id, monthly_charges2)) +
+  geom_point()
+
+ggplot(comms_data_imputed_values, aes(customer_id, monthly_charges3)) +
+  geom_point()
+```
+
+
+```{r}
+comms_data %>% 
+  pull(payment_method) %>%
+  is.na()
+```
+
+```{r}
+comms_data %>% 
+  pull(total_charges) %>%
+  is.na()
+```
+
+```{r}
+#Make an NA something else ----
+comms_data %>% 
+  filter(is.na(total_charges))
+
+#Select total charges column
+#Add new column to change character 'na' to NA
+#Add second column to change character 'N/A' to NA
+comms_data_imputed_values %>%
+  select(total_charges) %>% 
+  mutate(total_charges_explicit_na = na_if(total_charges, "na"),
+         total_charges_explicit_na = na_if(total_charges, "N/A"))
+```
+
+```{r}
+#Same as above but more refined to change specific values to real NA ----
+comms_data_imputed_values %>%
+  mutate(total_charges = na_if(total_charges, "na"),
+         total_charges = na_if(total_charges, "N/A"),
+         payment_method = na_if(payment_method, "--"))
+```
+
+```{r}
+#How to change an NA value to something else ----
+#Coalesce turns NA into something else
+comms_data_cleaned <- comms_data %>%
+  mutate(total_charges = na_if(total_charges, "na"),
+         total_charges = na_if(total_charges, "N/A"),
+         payment_method = na_if(payment_method, "--"),
+         payment_method = coalesce(payment_method, "unknown"))
+
+comms_data_cleaned
+```
+

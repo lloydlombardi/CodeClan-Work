@@ -1,0 +1,52 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+#Read in libraries ----
+library(tidyverse)
+install.packages("janitor")
+library(janitor)
+library(CodeClanData)
+```
+
+First 4 lines of the csv file are "meta-data" - data about data
+```{r}
+#Read in CSV ----
+video_game <- read_csv("steam-200k-sample.csv")
+```
+
+```{r}
+#Read in csv and skip first 4 meta-data lines ----
+video_games <- read_csv("steam-200k-sample.csv", skip = 4)
+```
+
+```{r}
+#Read in csv again but change 'bought online' coulmn to LOGICAL ----
+video_games <- read_csv("steam-200k-sample.csv", 
+                        skip = 4,
+                        col_types = cols("bought online" = col_logical()))
+video_games
+```
+
+```{r}
+#Alternative to above ----
+read_csv("steam-200k-sample.csv", skip = 4) %>%
+  mutate(`bought online` = as.logical(`bought online`))
+```
+
+```{r}
+#Use clean_names janitor function to get rid of spaces ----
+video_games_janitor_clean <- video_games %>% 
+  clean_names()
+
+video_games_janitor_clean
+```
+
+```{r}
+#Use rename function to temporarily change column names ----
+video_games_janitor_clean %>% 
+  rename("game_title" = "game_name", "activity" = "what", "playing_hours" = "value")
+```
+
