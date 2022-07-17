@@ -1,0 +1,52 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(CodeClanData)
+```
+
+```{r}
+library(dplyr)
+library(MASS)
+```
+
+
+The MASS package has masked the 'select' function from dplyr
+
+```{r}
+#Select will not work as it is a MASS function ----
+mtcars %>% 
+  select(mpg)
+```
+
+```{r}
+#Use conflicts() to see the current conflicts ----
+conflicts()
+```
+
+```{r}
+#Use the select function directly from dplyr ----
+mtcars %>% 
+  dplyr::select(mpg)
+```
+
+```{r}
+install.packages("zoo")
+library(zoo)
+```
+
+```{r}
+mtcars %>% 
+  dplyr::select(mpg, hp) %>% 
+  filter(mpg < 25) %>% 
+  summarise(mean = mean(hp))
+```
+
+```{r}
+
+```
+

@@ -21,7 +21,8 @@ new_coders %>%
 #Use group_by and mutate functions ----
 new_coders %>% 
   group_by(job_pref) %>% 
-  mutate(avg_exp_earn = mean(expected_earn))
+  mutate(avg_exp_earn = mean(expected_earn),
+         .after = expected_earn)
 ```
 
 ```{r}
