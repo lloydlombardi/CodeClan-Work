@@ -1,0 +1,100 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+library(tidyverse)
+```
+
+```{r}
+actors <- read_csv("data/actors.csv")
+movies <- read_csv("data/movies.csv")
+roles <- read_csv("data/roles.csv")
+```
+
+Primary key - id
+Foreign key - 
+```{r}
+actors
+```
+
+Primary key - id
+Forgein key
+```{r}
+movies
+```
+
+Primary key - 
+Foreign key - actor_id & movie_id
+```{r}
+roles
+```
+
+Relationship between actors and roles:
+One-to-many
+
+Relationship between movies and roles:
+One-to-many
+
+Relationship between actors and movies:
+Many-to-many
+
+Q1.2.1
+```{r}
+movies %>% 
+  filter(name == "Little Mermaid, The")
+```
+
+Q1.2.2
+```{r}
+little_mermaid_roles <- roles %>% 
+  filter(movie_id == 192017)
+```
+
+Q1.2.3
+```{r}
+left_join(little_mermaid_roles, actors, by = c("actor_id" = "id"))
+```
+
+Q1.2.4
+```{r}
+inner_join(little_mermaid_roles, actors, by = c("actor_id" = "id"))
+
+```
+
+Q1.3.1
+```{r}
+actors_more_than_once <- actors %>% 
+  filter(film_count > 1)
+```
+
+Q1.3.2
+```{r}
+roles_actors_mto <- left_join(actors_more_than_once, roles, by = c("id" = "actor_id"))
+roles_actors_mto
+```
+
+Q1.3.3
+```{r}
+actors_by_roles <- left_join(roles_actors_mto, movies, by = c("movie_id" = "id"))
+```
+Q1.3.4
+```{r}
+actor_ratings <- actors_by_roles %>% 
+  group_by(id) %>% 
+  mutate(rank = as.numeric(rank), 
+         avg_actor_rating = mean(rank, na.rm = TRUE))
+
+actor_ratings
+```
+
+Q1.3.4 cont.
+```{r}
+actor_ratings %>% 
+  select(id, first_name, last_name, avg_actor_rating) %>% 
+  group_by(last_name, first_name) %>% 
+  summarise(avg_actor_rating = mean(avg_actor_rating)) %>%
+  ungroup() %>% 
+  slice_max(avg_actor_rating, n = 5)
+```
+

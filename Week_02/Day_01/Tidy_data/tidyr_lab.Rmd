@@ -1,0 +1,61 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+#Task 1 ----
+
+country <- read_csv("data/country_data.csv")
+country
+```
+Task 1:
+- Population and cases need their own columns - wide pivot
+- Years need their own columns - long pivot
+- 'country' column needs to be separated in order to separate the numbers and the names of the countries - separate 
+- code_letter and code_number need to be united
+
+```{r}
+#Task 2: long-pivot ----
+
+country_longer <- country %>% 
+  pivot_longer(cols = starts_with("Y"),
+               names_to = "year",
+               values_to = "number",
+               names_prefix = "Y")
+
+country_longer
+```
+
+```{r}
+#Task 2: Wide-pivot ----
+
+country_wider <- country_longer %>% 
+  pivot_wider(names_from = type,
+              values_from = number)
+
+country_wider
+```
+
+```{r}
+#Task 3: separate country column ----
+
+tidy_country <- country_wider %>% 
+  separate(col = country, into = c("id", "country"), sep = "\\. ")
+
+tidy_country
+```
+
+```{r}
+#Task 4: unite code_letter & code_numb ----
+
+tidier_country <- tidy_country %>% 
+  unite(code, c("code_letter", "code_numb"), sep = "")
+
+tidier_country
+```
+

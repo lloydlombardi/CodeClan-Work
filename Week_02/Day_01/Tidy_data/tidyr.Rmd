@@ -1,0 +1,119 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+#Read in df ----
+#This is a WIDE format
+#Variables don't have their own columns
+#Need a variable for heartrate
+#Need a variable for time_of_day
+
+subject_hr <- tibble( name = c("SUBJ01","SUBJ02","SUBJ03"), 
+  hr_am = c(68,72,68), 
+  hr_pm = c(58,89,52))
+
+subject_hr
+```
+
+```{r}
+#Use pivot_longer func to change df to long ----
+# subject_hr %>% 
+#   pivot_longer(cols = c("hr_am", "hr_pm"),
+#                names_to = "measurements_of_time",
+#                values_to = "heartrate")
+
+subject_hr %>% 
+  pivot_longer(cols = c(starts_with("hr")),
+               names_to = "measurements_of_time",
+               values_to = "heartrate")
+```
+
+```{r}
+#Read in df ----
+income <- tibble(religion = c("Agnostic","Atheist","Buddhist", "Catholic"), 
+  X10k = c(12,25,3,75), 
+  X10k_to_20k = c(34,14,6,60),
+  X20k_to_30k = c(45,22,10,110))
+
+income
+```
+
+```{r}
+#Task ----
+income %>% 
+  pivot_longer(cols = starts_with("X"),
+               names_to = "income_bracket",
+               values_to = "income")
+```
+
+```{r}
+#Read in df ----
+messy_orders <- tibble( name = c("Joe Bloggs","Jane Smith","Penny Jones"), 
+  order_info = c("XY7282/29-06-19","LO0182/15-03-19","AS6812/04-06-19"), 
+  order_amount = c(58.00,125.00,75.25))
+
+messy_orders
+```
+
+```{r}
+#Use separate func to tidy up the above df ----
+tidy_orders <- messy_orders %>% 
+  separate(order_info, 
+           into = c("order_number", "date"),
+           sep = "/")
+
+tidy_orders
+```
+
+```{r}
+hospitals <- read_csv("data/hospitals93to98.csv")
+```
+
+```{r}
+skimr::skim(hospitals)
+```
+
+```{r}
+#Read in untidy data ----
+#Untidy because index included in IcdChapter
+#Untidy because each year has a column
+view(hospitals)
+```
+
+```{r}
+#Change to longer ----
+hospitals_long <- hospitals %>% 
+  pivot_longer(cols = starts_with("FY"),
+               names_to = "year",
+               values_to = "visit_number",
+               names_prefix = "FY") #Use to remove prefix from year column
+```
+
+```{r}
+#Convert Fields columns to wider ---
+#PatientDays and Separations need own columns
+hospitals_wide <- hospitals_long %>% 
+  pivot_wider(names_from = Field,
+              values_from = visit_number)
+```
+
+```{r}
+#Use separate to split IcdChapter ----
+tidy_hospital <- hospitals_wide %>% 
+  separate(IcdChapter, 
+           into = c("code", "description"), 
+           sep = "\\. ") #Need to use \\ when using a '.'
+```
+
+```{r}
+#Stick code and description back together using unite func ----
+tidy_hospital %>% 
+  unite(disease, c("code", "description"), sep = ":")
+```
+

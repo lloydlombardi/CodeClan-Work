@@ -1,0 +1,180 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+#Insert customer info table ----
+customers <- tibble(
+  customer_ID = c(001, 002, 004, 005, 008, 010), 
+  name = c("John Smith", "Jane Adams", "Robert Landry", "Jane Tow", "Raul Tann", "Hilary Joyal"),
+  email_address = c("johnsmith@gmail.com", "janea@gmail.com", "rlabdry@hotmail.com", "janet89@aol.com", "paul.tann1@gmail.com", NA),
+  shipping_address = c("32 Station Road, Edinburgh", "42 Park Drive, Edinburgh", NA, "10 Gardiner Rd, Edinburgh", "12 Main St, Edinburgh", " 234 Queensferry Rd, Edinburgh,")
+)
+
+customers
+```
+
+```{r}
+#Insert order info table ----
+orders <- tibble(
+  customer_ID = c(001, 002, 005, 010, 012, 001), 
+  order_number = c("KU65781", "SU98201", "JS76821", "YR28212", "JS91221","YR21873"),
+  order_total = c("£32.50", "£56.00", "£100.02", "£20.25", "£39.50", "£45.00"),
+  product_code = c("XZY780", "XYZ123", "XYZ256", "XYZ262", "XYZ345", "XYZ127")
+)
+
+orders 
+```
+
+```{r}
+#Joining syntax ----
+join_function(data_x, data_y, c(key_x, key_y))
+```
+
+
+```{r}
+#Join tables using inner_join ----
+#This only returns 5 rows as Robert and Raul don't have entries in orders table
+
+inner_join(customers, orders, "customer_ID")
+```
+
+```{r}
+#Join tables using left_join ----
+#Keeps all LHS info, returns NA values for missing values
+#John Smith is repeated as he has 2 orders
+
+left_join(customers, orders, "customer_ID")
+```
+
+```{r}
+#Join tables using right_join ----
+#Keeps all RHS info, returns NA values for missing values
+#John Smith appears twice, Raul and Robert are missing, customer_ID 12 is included
+
+right_join(customers, orders, "customer_ID")
+```
+
+```{r}
+#Join tables using full join ----
+#Returns 8 rows, and matches where possible
+
+full_join(customers, orders, "customer_ID")
+```
+
+```{r}
+#Rename customer_ID to ID ----
+customers_adj <- rename(customers, ID = customer_ID)
+```
+
+```{r}
+#This throws and error as the primary and foreign keys don't match ----
+inner_join(customers_adj, orders, "customer_ID")
+```
+
+```{r}
+#To make it work, you can specify the key-names to match ----
+inner_join(customers_adj, orders, by = c("ID" = "customer_ID"))
+```
+
+```{r}
+#Create 2 identical payment_type columns to go in each table ----
+customers_2 <- customers %>% 
+  mutate(payment_type = c("card", "cash", "cash", "card", "card", "card"))
+
+orders_2 <- orders %>% 
+    mutate(payment_type = c("card", "cash", "cash", "card", "card", "card"))
+
+```
+
+```{r}
+#Join by multiple columns ----
+#R automatically joins by customer_ID and payment_type
+inner_join(customers_2, orders_2)
+```
+
+
+```{r}
+#Join by only "customer_ID ----
+#R will join by customer_ID and give repeated payment_type columns from LH and RH table
+inner_join(customers_2, orders_2, by = "customer_ID")
+```
+
+```{r}
+#Join tables using semi_join filter ----
+#This returns only the rows where data in LHS matches RHS
+#ONLY LHS columns are included
+#Raul and Robert are missing
+
+semi_join(customers, orders, "customer_ID")
+```
+
+```{r}
+#Join tables using anti_join filter ----
+#This returns rows that DON'T match RHS table
+#Only LHS columns included 
+#Raul and Robert are missing
+
+anti_join(customers, orders, "customer_ID")
+```
+
+```{r}
+# SLACK THIS OUT
+statuses <- tibble(
+  status = c("active", "active", "inactive", "inactive", "active", "inactive")
+) 
+```
+
+```{r}
+#Add new column from another df by using bind_cols ----
+bind_cols(customers, statuses)
+```
+
+```{r}
+#Insert a past_customer table ----
+past_customers <- tibble(
+  customer_ID = c(020, 021), 
+  name = c("Dave Brown", "Jess Bishop"),
+  email_address = c("dbrown@hotmail.com", "jessb@gmail.com"),
+  shipping_address = c("57 Park View, Leith", "12 Reid Way, Broxburn")
+)
+
+past_customers
+```
+
+```{r}
+#Use bind_rows function to add rows to existing df ----
+bind_rows(customers, past_customers)
+```
+
+```{r}
+#Insert a past_customer table but change shipping_address column----
+past_customers <- tibble(
+  customer_ID = c(020, 021), 
+  name = c("Dave Brown", "Jess Bishop"),
+  email_address = c("dbrown@hotmail.com", "jessb@gmail.com"),
+  address = c("57 Park View, Leith", "12 Reid Way, Broxburn")
+)
+
+past_customers
+```
+
+```{r}
+#Use bind_rows function to add rows to existing df ----
+#This will add the rows but also add a new column "address" as it doesn't match "shipping_address"
+
+bind_rows(customers, past_customers)
+```
+
+```{r}
+#Join tables using inner_join but don't include 'order_total' column from RHS ----
+
+inner_join(customers, orders, "customer_ID") %>% 
+  select(-order_total)
+```
+
