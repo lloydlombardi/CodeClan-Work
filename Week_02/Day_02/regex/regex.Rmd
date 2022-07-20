@@ -1,0 +1,349 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+single_string <- "string a"
+strings <- c("string a", "string b", "string c", "string d", "striiiiiiing e")
+```
+
+```{r}
+pattern <- "a"
+```
+
+```{r}
+#Detect if 'a' is in single_string ----
+single_string %>% 
+  str_detect(pattern)
+```
+
+```{r}
+single_string %>% 
+  str_detect(pattern, negate = TRUE)
+```
+
+```{r}
+strings %>% 
+  str_detect(pattern)
+```
+
+```{r}
+pattern <- "str"
+
+strings %>% 
+  str_detect(pattern)
+```
+
+```{r}
+#Use square brackets to check for a or b or c or combinations ----
+pattern <- "[abc]"
+
+strings %>% 
+  str_detect(pattern)
+```
+
+```{r}
+#Use '-' to specify a range ----
+pattern <- "[a-z]"
+
+strings %>% 
+  str_detect(pattern)
+```
+
+```{r}
+#Use '-' to specify a range and use (?i) to check across upper and lower----
+pattern <- "(?i)[a-z]"
+
+strings %>% 
+  str_detect(pattern)
+```
+
+```{r}
+pattern <- "i{3}"
+
+strings %>% 
+  str_detect(pattern)
+```
+
+```{r}
+#Check for more than 1 'i' ----
+pattern <- "i{2,}"
+
+strings %>% 
+  str_detect(pattern)
+```
+
+```{r}
+#Check for 'str' or 'gr' ----
+pattern <- "str|gr"
+
+strings %>% 
+  str_detect(pattern)
+```
+
+```{r}
+string_vector <- c("We're having great fun learning about data analysis at CodeClan!", "CodeClan is at 37 Castle Terrace in Edinburgh and ClockWise in Glasgow", "Our cohort code starts with DE or DR", "You get a great view of the castle or the national conservatoire from just outside CodeClan's door")
+```
+
+```{r}
+#Task 1 ----
+
+pattern <- "CodeClan"
+
+string_vector %>% 
+  str_detect(pattern)
+```
+
+```{r}
+#Task 2 ----
+
+pattern <- "[A-Z][A-Z]"
+
+string_vector %>% 
+  str_detect(pattern)
+```
+
+```{r}
+#Task 3 ----
+
+pattern <- "castle|Castle"
+
+string_vector %>% 
+  str_detect(pattern, negate = TRUE)
+```
+
+```{r}
+strings <- c(
+  "This string has an_address@email.com in it", 
+  "This one has user.name@company.co.uk", 
+  "Now we've got other_person_123@server.net and my.name@runningoutofideas.com"
+)
+```
+
+```{r}
+#This finds the first match in the strings then extracts the letters at the point of each string ----
+pattern <- "[a-z]"
+
+strings %>% 
+  str_extract(pattern)
+```
+
+```{r}
+#This code looks for the letter before the @ sign and returns them----
+pattern <- "[a-z]@"
+
+strings %>% 
+  str_extract(pattern)
+```
+
+```{r}
+pattern <- "[a-z]{2,}@"
+
+strings %>% 
+  str_extract(pattern)
+```
+
+? - zero or one
+* - zero or more
++ - one or more
+
+```{r}
+string <- "@emailprovider.com"
+```
+
+```{r}
+pattern <- "[a-z]@emailprovider.com"
+
+string %>% 
+  str_detect(pattern)
+```
+
+```{r}
+#Look for zero or more chars before '@'----
+pattern <- "[a-z]*@emailprovider.com"
+
+string %>% 
+  str_detect(pattern)
+```
+
+```{r}
+#Look for zero or one chars before '@' ----
+pattern <- "[a-z]?@emailprovider.com"
+
+string %>% 
+  str_detect(pattern)
+```
+
+```{r}
+#Look for one or more chars before '@' ----
+pattern <- "[a-z]+@emailprovider.com"
+
+string %>% 
+  str_detect(pattern)
+```
+
+```{r}
+strings <- c(
+  "This string has an_address@email.com in it", 
+  "This one has user.name@company.co.uk", 
+  "Now we've got other_person_123@server.net and my.name@runningoutofideas.com"
+)
+```
+
+```{r}
+#Use '+' symbol to extract first name before '@' sign ----
+pattern <- "[a-z]+@"
+
+strings %>% 
+  str_extract(pattern)
+```
+
+```{r}
+#Use '+' symbol to extract first name before '@' sign ----
+#This time include numbers
+pattern <- "[a-z0-9]+@"
+
+strings %>% 
+  str_extract(pattern)
+```
+
+```{r}
+#Extract words before and after '@' ----
+pattern <- "[a-z0-9]+@[a-z]+"
+
+strings %>% 
+  str_extract(pattern)
+```
+
+```{r}
+#Extract more info with '_.'
+pattern <- "[a-z0-9_.]+@[a-z.]+"
+
+strings %>% 
+  str_extract(pattern)
+```
+
+```{r}
+#Extract emails with same 'name' ----
+pattern <- "[a-z0-9_.]+@[a-z.]+"
+
+strings %>% 
+  str_extract_all(pattern)
+```
+
+```{r}
+#Use [:punct:] to grab any punctuation
+pattern <- "[a-z0-9[:punct:]]+@[a-z[:punct:]]+"
+
+strings %>% 
+  str_extract_all(pattern)
+```
+
+```{r}
+#str_remove is the opposite of str_extract ----
+pattern <- "[a-z0-9[:punct:]]+@[a-z[:punct:]]+"
+
+strings %>% 
+  str_remove(pattern)
+```
+
+```{r}
+#str_replace takes(data, data_to_replace_with)
+pattern <- "[a-z0-9[:punct:]]+@[a-z[:punct:]]+"
+
+strings %>% 
+  str_replace(pattern, "[insert email address]")
+```
+
+```{r}
+string_vector_2 <- c("Colin's mobile number definitely isn't 07777777777.", "A landline might be 01010 123456.", "Mhairi, Del, Aileen and Steph helped write these notes", "I'm called your_name_here and I live in your_town_here.")
+```
+
+```{r}
+pattern <- "[A-Z][a-z]+"
+
+string_vector_2 %>% 
+  str_extract_all(pattern)
+```
+
+```{r}
+pattern <- "[0-9]+[:space:][0-9]+"
+
+ string_vector_2 %>% 
+   str_extract(pattern)
+```
+
+
+```{r}
+pattern_1 <- "[a-z_]+name[a-z_]+"
+pattern_2 <- "[a-z_]+town[a-z_]+"
+replacement_1 <- "Lloyd"
+replacement_2 <- "Glasgow"
+
+string_vector_2 %>% 
+  str_replace_all(c(pattern_1 = replacement_1, pattern_2 = replacement_2))
+```
+
+```{r}
+string_vector_2 %>% 
+  str_replace_all(c("[a-z_]+name[a-z_]+" = "Lloyd", "[a-z_]+town[a-z_]+" = "Glashow"))
+```
+
+```{r}
+test_strings <- c(
+  "abc", 
+  "Abc",
+  "abC",
+  "s"
+)
+```
+
+```{r}
+#Use '^' for starts-with ----
+pattern <- "^(?i)[a-z]+[a-zA-z]*"
+
+test_strings %>% str_extract_all(pattern)
+```
+
+```{r}
+#Use '$' for ends with ----
+pattern2 <- "[a-zA-z]*[a-z]$"
+
+test_strings %>% str_extract_all(pattern2)
+```
+
+```{r}
+student <- c("Abigail", "Bjorn", "Caitlin")
+age <- c(25, 56, 40)
+emails <- c("abigal12@company.co.uk", "bsmith@gmail.co.uk", "caitlin_1980")
+
+student_info <- tibble(student, age, emails)
+
+student_info
+```
+
+```{r}
+#THIS WON'T WORK ON A TIBBLE ----
+
+student_info %>%
+  str_detect("[a-z0-9[:punct:]*@")
+```
+
+```{r}
+#Use the mutate function to add an email detect column ----
+student_info %>% 
+  mutate(email_detect = str_detect(emails, "[a-z0-9[:punct:]]*@"))
+```
+
+```{r}
+#Add new column to specify email provider ----
+student_info %>% 
+  mutate(email_provider = str_extract(emails, "@[a-z.]+"))
+```
+

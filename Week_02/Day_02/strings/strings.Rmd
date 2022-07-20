@@ -1,0 +1,239 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+spotify <- read_csv("data/spotify_sample.csv")
+```
+
+```{r}
+view(spotify)
+```
+
+```{r}
+employees <- tibble(
+  first_name = c("Sally", "steven", "Mary", "John"),
+  last_name = c("Smith", "hasTings", "Milne", "Davidson"),
+  postcode = c("EH10 6GH", "EH3 7HL", "G1 7FR", NA), 
+  location = c(" ", "Edinburgh", "", "Stirling")
+)
+
+employees
+```
+
+```{r}
+employees %>% 
+  group_by(location) %>% 
+  summarise(n())
+```
+
+```{r}
+#Filter by name and location and pull Mary's location ----
+mary_location <- employees %>% 
+  filter(first_name == "Mary") %>% 
+  select(location) %>% 
+  pull()
+```
+
+```{r}
+#Filter by name and location and pull Sally's location ----
+
+sally_location <- employees %>% 
+  filter(first_name == "Sally") %>% 
+  select(location) %>% 
+  pull()
+```
+
+```{r}
+#Check if they are equal ----
+mary_location == sally_location
+```
+
+```{r}
+#Find the character length of each location ----
+#Location 3 is an empty string!
+employees %>% 
+  summarise(nchar(location))
+```
+
+```{r}
+#Concatenate strings ----
+#Manually input spaces
+str_c("This ", "is ", "some ", "text.")
+
+#Use sep to add spaces
+str_c("This", "is", "some", "text", sep = " ")
+```
+
+```{r}
+#Join first name and last name ----
+employees %>% 
+  mutate(full_name = str_c(first_name, last_name, sep = " "),
+         .after = last_name)
+```
+
+```{r}
+#Be careful when using NA values!!! ----
+#full_name for John Davidson returned as NA
+
+employees %>% 
+  mutate(full_name = str_c(first_name, postcode, sep = " "),
+         .after = last_name)
+```
+
+```{r}
+#Fine when using empty strings ----
+employees %>% 
+  mutate(full_name = str_c(first_name, location, sep = " "),
+         .after = last_name)
+```
+
+```{r}
+#Use paste function to handle NA values ----
+employees %>% 
+  mutate(full_name = paste(first_name, postcode),
+         .after = last_name)
+```
+
+```{r}
+#Manipulating string ----
+
+pangram <- "The quick brown fox jumps over the lazy dog"
+
+pangram %>% 
+  str_to_upper()
+
+pangram %>% 
+  str_to_lower()
+
+pangram %>% 
+  str_to_title()
+
+pangram %>% 
+  str_to_sentence()
+```
+
+```{r}
+employees %>% 
+  select(first_name, last_name) %>% 
+  mutate(first_name_fix = str_to_title(first_name),
+         last_name_fix = str_to_title(last_name))
+```
+
+```{r}
+#Splitting strings ----
+unbroken_string <- "We're going to break up this string."
+
+#State what to split the strings by
+#Returns a list
+#Use flatten_char to lose the list
+unbroken_string %>% 
+  str_split(" ") %>% 
+  flatten_chr()
+```
+
+```{r}
+#Use str_split and unnest ----
+employees %>% 
+  mutate(new_postcode = str_split(postcode, " ")) %>% 
+  unnest(new_postcode)
+```
+
+```{r}
+#Use separate_rows function ----
+employees %>% 
+  separate_rows(postcode, sep = " ")
+```
+
+```{r}
+employees %>% 
+  separate(postcode, c("postcode_outer", "postcode_inner"), " ")
+```
+
+```{r}
+#Task ----
+
+conc_string <- str_c("Manipulating", "strings", "is", "fun", sep = " ")
+conc_string
+
+capitalised <- str_to_upper(conc_string)
+capitalised
+
+split_string <- str_split(capitalised, "") %>% 
+                flatten_chr()
+split_string
+```
+
+```{r}
+#Extracting specific letters ----
+full_string <- "Let's grab a substring from this!"
+
+#Extract first 5 letter of string
+full_string %>% 
+  str_sub(start = 1, end = 5)
+
+#Grab everything but Let's
+full_string %>% 
+  str_sub(start =  6)
+
+#Use negatvive numbers to count from back 
+full_string %>% 
+  str_sub(-5, -1)
+```
+
+```{r}
+#Use str_sub to collect last 3 letters of each postcode ----
+#Then collect everything else
+employees %>% 
+  mutate(postcode_inner = str_sub(postcode, -3),
+         postcode_outer = str_sub(postcode, 1, -4))
+```
+
+```{r}
+string <- "We're going to replace some words."
+```
+
+```{r}
+str_sub(string, 1, 22) <- "I've changed some words"
+```
+
+```{r}
+string
+```
+
+```{r}
+number <- 123456.789
+```
+
+```{r}
+number %>% 
+  format()
+```
+
+```{r}
+number %>% 
+  format(nsmall = 1, decimal.mark = ",")
+```
+
+```{r}
+number %>% 
+  format() %>% 
+  as.numeric()
+```
+
+```{r}
+spotify_stringed <- spotify %>% 
+  mutate(playlist_name = str_to_upper(playlist_name),
+         track_artist_lowercase = str_to_lower(track_artist),
+         playlist_start = str_sub(playlist_id, 1, 5),
+         year = str_sub(track_album_release_date, 1, 4),
+         playlist_category = str_c(playlist_genre, playlist_subgenre, sep = "/"))
+
+view(spotify_stringed)
+```
+
