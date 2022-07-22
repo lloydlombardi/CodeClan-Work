@@ -1,0 +1,102 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(tidyr)
+```
+
+
+###Question 1
+```{r}
+diet <- read_csv("data/dietary-composition-by-country.csv")
+country_codes <- read_csv("data/country_codes.csv")
+```
+
+```{r}
+dim(diet)
+dim(country_codes)
+```
+
+```{r}
+names(diet)
+names(country_codes)
+```
+
+
+
+```{r}
+diet <- clean_names(diet)
+country_codes <- clean_names(country_codes)
+```
+
+```{r}
+view(diet)
+view(country_codes)
+```
+
+
+###Question 2
+```{r}
+diet_comp_clean <- diet %>% 
+  pivot_longer(c(animal_fats_fao_2017:wheat_fao_2017),
+               names_to = "kcal_source",
+               values_to = "avg_daily_kcals")
+```
+
+
+###Question 3
+```{r}
+food_suffix_remove <- c("_fao_2017")
+
+diet_comp_clean <- diet_comp_clean %>% 
+  mutate(kcal_source = str_remove_all(kcal_source, food_suffix_remove),
+         kcal_source = str_to_title(kcal_source),
+         kcal_source = str_replace_all(kcal_source, "_", " ")) %>% 
+  rename("country" = "entity")
+```
+
+###Question 4
+
+```{r}
+diet_comp_clean %>%
+  summarise(across(everything(),~sum(is.na(.x))))
+```
+
+###Question 5
+```{r}
+missing_countries <- diet_comp_clean %>% 
+  filter(is.na(code)) %>% 
+  distinct(country)
+
+missing_countries_vector <- c(missing_countries)
+```
+
+###Question 6
+```{r}
+country_codes %>% 
+  filter(country %in% c("United States", "Cape Verde"))
+```
+
+###Question 7
+
+
+
+```{r}
+diet_comp_clean <- diet_comp_clean %>% 
+  mutate(code = case_when(
+    country == "Cabo Verde" ~replace_na(code, "CPV"),
+    country == "United States of America" ~replace_na(code, "USA"),
+    TRUE ~code))
+```
+
+
+###Question 7 check
+```{r}
+diet_comp_clean %>% 
+  filter(is.na(code)
+```
+

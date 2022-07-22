@@ -1,0 +1,270 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+cc_info <- read_csv("data/code_clan_info.csv")
+```
+
+
+```{r}
+#if statements ----
+
+if(this_thing_is_true) {#THEN
+  #DO THIS THING HERE
+  }
+```
+
+```{r}
+x <- 10
+y <- 15
+if (x < y) {#THEN
+  print("yes")
+}
+
+x <- 100
+
+if (x < y) {#THEN
+  print("yes")
+}
+```
+
+```{r}
+#Cannot compare one element to many ----
+x <- 10
+y <- 5:20
+if (x < y) {#THEN
+  print("yes")
+}
+
+```
+
+```{r}
+#Check if x is in y's range ----
+x <- 10
+y <- 5:20
+if (x %in% y) {#THEN
+  print("yes")
+}
+```
+
+Write an if statement that prints ‘Yes that divides by 2’ if a number x is divisible by 2 (hint: use %% 2 == 0 as your expression), try it out for different values of x.
+
+```{r}
+#Task ----
+x <- 10
+y <- 2
+
+if(x %% y == 0){
+  print("Yes, that divides by 2")
+}
+```
+
+```{r}
+#Adding an else statement ----
+x <- 10
+y <- 2
+
+if(x %% y == 0){
+  print("Yes, that divides by 2")
+} else {
+  print("No, that does not divide by 2")
+}
+```
+
+```{r}
+x <- 10
+y <- 15:20
+if (x %in% y) {#THEN
+  print("yes")
+} else {
+  print("no")
+}
+```
+
+```{r}
+x <- 6
+y <- 13
+
+if (x %in% c(3, 4, 5)){
+  
+                       print("x is in our vector")
+  
+  if (x == 5){
+    
+              print("x is exactly 5")
+    
+  }
+  
+} else {
+  
+        print("Start of else statement")
+  
+  if (y %% x == 0){
+    
+                   print("x divides y")
+  
+  } else{
+    
+         print("x does not divide Y")
+  }
+  
+  print ("End of else statement")
+  
+}
+```
+
+When x is 5 and y is 10
+x is in our vector
+x is exactly 5
+
+When x is 6 and y is 12
+Start of else statement
+x divides y
+End of else statement
+
+When x is 6 and y is 13
+Start of else statement
+x does not divide Y
+End of else statement
+
+'for'
+-Used when we _know_ how many iterations are needed
+-Will end after desired number of loops
+-Can be _slow_, but likely because of a failure to vectorise
+
+'while'
+-Used when we _don't_ know how many iterations are needed
+-Will end after condition is met
+```{r}
+#Loops ----
+#Bear in mind that loops can usually be AVOIDED ----
+#Try and loop under certain CONDITIONS ----
+
+for(item in v) {
+  print(item)
+}
+```
+
+```{r}
+for(item in v) {
+  print(item * 2)
+}
+```
+
+### `for()`
+```{r}
+#Loop through the days of the week ----
+weekdays <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday")
+
+for(i in weekdays){
+  # browser() - you can use this function to cycle through the loops in the console
+  phrase <- print(paste("The day is", i)) 
+}
+```
+
+### `while()`
+Sometimes you can get stuck in an infinite loop
+
+```{r}
+current_value <- 1 #Initialise your variable first
+stop_value <- 10
+
+while(current_value < stop_value){
+  current_value <- current_value + 1
+  print(paste("The value is", current_value))
+}
+```
+
+### Alternative ways to index a `for` loop
+
+```{r}
+weekdays
+len_weekdays <- length(weekdays)
+
+for (i in 1:len_weekdays){
+  print(paste("The day is", weekdays[i]))
+}
+```
+
+### Replacing a vector from a loop ___TERRIBLE PRACTICE___
+
+```{r}
+weekdays
+len_weekdays <- length(weekdays)
+
+for(i in 1:len_weekdays){
+  plural <- paste0(weekdays[i], "s") #creating a new value from the old value, based on the index
+  weekdays[i] <- plural #modifying each vec element based on the index
+}
+weekdays
+```
+
+```{r}
+m <- matrix(1:12, nrow = 4, ncol = 3)
+nrows <- nrow(m)
+ncols <- ncol(m)
+
+for (row_i in 1:nrows){
+  print(m[row_i, ])
+}
+```
+
+```{r}
+m <- matrix(1:12, nrow = 4, ncol = 3)
+nrows <- nrow(m)
+ncols <- ncol(m)
+
+for (row_i in 1:nrows) {
+  for (col_i in 1:ncols) {
+    print(m[row_i, col_i])
+  }
+}
+```
+
+```{r}
+m <- matrix(rnorm(25), 5)
+num_row <- dim(m)[1]
+num_col <- dim(m)[2]
+
+for (row_i in 1:num_row){
+  for(col_i in 1:num_col){
+    print(m[row_i, col_i])
+  }
+}
+```
+
+
+```{r}
+product_matrix <- matrix(NA, nrow = 5, ncol = 5)
+num_row <- dim(product_matrix)[1]
+num_col <- dim(product_matrix)[2]
+
+for (row_i in 1:num_row){
+  for (col_i in 1:num_col){
+    product_matrix[row_i, col_i] <- row_i * col_i #At this position, input the product of num_row * num_col
+  }
+}
+
+product_matrix
+```
+
+```{r}
+example_matrix = matrix(1:25, nrow = 5, ncol = 5)
+example_matrix 
+
+for (row_index in 1:5){
+  for (col_index in 1:5){
+    if (row_index == col_index){ #When row and col index are the same, print the number at the position of the matrix
+      print(example_matrix[row_index, col_index])
+    }
+   }
+}
+```
+

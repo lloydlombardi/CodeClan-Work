@@ -1,0 +1,146 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+cc_info <- read_csv("data/code_clan_info.csv")
+```
+
+
+```{r}
+#Lists ----
+
+x <- list(1, "a,", TRUE, c(1,2,3))
+
+x
+```
+
+```{r}
+#Convert a vector to a list ----
+v <- c(1, 2, 3, 4, 5)
+
+as.list(v)
+```
+
+```{r}
+#Use str to look at the list ----
+str(x)
+```
+
+```{r}
+#Name elements in a list ----
+named_list <- list(a = "I love R", b = 1:10)
+
+named_list
+
+#Extract element from a list using '$' ----
+named_list$a
+
+#Find names of elements in list ----
+names(named_list)
+```
+
+```{r}
+#Nested list ----
+student_info <- list(
+                     "Agnes" = list(height = 1.8, shoe_size = 8L),
+                     "Bobby" = list(height = 2.1, gender = "Male"),
+                     "Charlie" = list(gender = "Female", likes_beets = TRUE)
+)     
+
+#Use '$' to access each level of element in the list ----
+student_info$Agnes$height #Use this only if you are sure which column you want and it won't change
+
+#Or you can use [[]] instead ----
+student_info[["Agnes"]][["height"]] #Use this is you want to access programmatically - this is also safer
+
+
+```
+
+```{r}
+#Task ----
+my_list <- list(a = "a", b =  "Lloyd", c =  2022) #Create named list
+
+my_list[[2]]          #Access using [[]]
+class(my_list[[2]])   #Check class
+my_list[2]            #Access using []  
+class(my_list[2])     #Check class
+my_list[["b"]]        #Access by name
+class(my_list[["b"]]) #Check class
+```
+
+```{r}
+#How to select columns from a dataset ----
+cc_info_subset <- head(select(cc_info, tweet_id, name, protected)) #Using tidyverse
+head(cc_info[c("tweet_id", "name", "protected")]) #Using base-R
+cc_info_subset
+
+#Change the above into a matrix ----
+as.matrix(cc_info_subset)
+```
+
+```{r}
+#Creating own matrices ----
+#R is ordered in column-major order
+matrix(1:4, nrow = 2, ncol = 2)
+
+matrix(1:12, nrow = 4, ncol = 3)
+
+#Change to give row-major order ----
+matrix(1:12, nrow = 4, ncol = 3, byrow = TRUE)
+```
+
+```{r}
+#Indexing a matrix ----
+cc_info_subset["tweet_id"] #Extract column
+cc_info_subset[1:3, "tweet_id"] #Extract rows from columns
+cc_info_subset[1:3, 1:2] #Extract first 3 rows and first 2 columns
+
+```
+
+```{r}
+m <- matrix(1:12, nrow = 4, ncol = 3)
+m[1, ] #Extract first row ----
+m[ ,1] #Extract first column ----
+
+m[1, 2] #Extract number 5 ----
+
+m[ ,c(1, 3)] #Extract all rows from columns 1 & 3 ----
+
+m[c(1, 3), c(1, 3)] #Extract rows 1&3 and columns 1&3 ----
+m[c(1, 3), -2] #Same as above but use negative integers to remove column 2 ----
+```
+
+```{r}
+v * 2
+
+m * 2 #Multiply matrix by 2 ----
+m - 2 #Minus 2 from all elements in matrix ----
+
+rowSums(m)  #Add all numbers in each row ----
+colSums(m)  #Add all numbers in each col ----
+rowMeans(m) #Find mean of each row ----
+colMeans(m) #Find mean of each col ----
+``` 
+
+```{r}
+#Task ----
+
+my_matrix <- matrix(c(1:3), nrow = 3, ncol = 4)
+my_matrix
+
+my_matrix[2, 3]
+
+colSums(my_matrix)
+
+colnames(my_matrix) <- paste0("col", 1:4) #Rename column names ----
+rownames(my_matrix) <- paste0("row", 1:3) #Renma row names ----
+my_matrix
+```
+

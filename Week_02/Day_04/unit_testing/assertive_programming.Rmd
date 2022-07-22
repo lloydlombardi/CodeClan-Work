@@ -1,0 +1,173 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+weather_1 <- read_csv("data/delhi_weather_one.csv")
+weather_2 <- read_csv("data/delhi_weather_two.csv")
+```
+
+###Create a function to store calculations
+```{r}
+#Find average temp, humidity and windspeed ----
+
+weather_report <- function(weather){
+  # Our average temperature, humidity and wind speed 
+  weather_means <- 
+  weather %>% 
+  summarise(
+    mean_temp = mean(temp),
+    mean_humidity = mean(humidity),
+    mean_windspeed = mean(wind_speed)
+  )
+
+# Show hot and humid days
+hot_and_humid <- 
+weather %>% 
+  filter(temp > 20) %>% 
+  filter(humidity > 55)
+
+return(list(weather_means, hot_and_humid))
+}
+
+weather_report(weather_1)
+```
+
+###Use the above function and apply it to second dataset
+This runs with no errors
+_but_
+it does return some odd values in 2nd table
+```{r}
+weather_2 %>% 
+  weather_report()
+```
+
+###Using assertr
+
+this can help throw _errors_ in your code
+used when you want to use a range of _expected_ outputs 
+
+```{r}
+library(assertr)
+```
+
+###We can give a range of inputs to our weather data
+
+temp: -35 - 55
+humidity: 0 - 100
+wind_speed: 0 - 108
+
+
+###Weather report one works perfectly OK
+```{r}
+weather_report <- function(weather){
+  
+  #put in checks on data first
+  weather %>% 
+    verify(temp >= -35 & temp <= 55) %>%            #Set range for temp  
+    verify(wind_speed >= 0 & wind_speed <= 108) %>% #Set range for w_s
+    verify(humidity >= 0 & humidity <= 100)         #Set range for hum 
+  
+  # Our average temperature, humidity and wind speed 
+  weather_means <- 
+  weather %>% 
+  summarise(
+    mean_temp = mean(temp),
+    mean_humidity = mean(humidity),
+    mean_windspeed = mean(wind_speed)
+  )
+
+# Show hot and humid days
+hot_and_humid <- 
+weather %>% 
+  filter(temp > 20) %>% 
+  filter(humidity > 55)
+
+return(list(weather_means, hot_and_humid))
+}
+
+weather_report(weather_1)
+```
+
+###Weather report 2 fails as assertr stops execution
+code stops after first failure
+```{r}
+weather_report <- function(weather){
+  
+  #put in checks on data first
+  weather %>% 
+    verify(temp >= -35 & temp <= 55) %>%            #Set range for temp  
+    verify(wind_speed >= 0 & wind_speed <= 108) %>% #Set range for w_s
+    verify(humidity >= 0 & humidity <= 100)         #Set range for hum 
+  
+  # Our average temperature, humidity and wind speed 
+  weather_means <- 
+  weather %>% 
+  summarise(
+    mean_temp = mean(temp),
+    mean_humidity = mean(humidity),
+    mean_windspeed = mean(wind_speed)
+  )
+
+# Show hot and humid days
+hot_and_humid <- 
+weather %>% 
+  filter(temp > 20) %>% 
+  filter(humidity > 55)
+
+return(list(weather_means, hot_and_humid))
+}
+
+weather_report(weather_2)
+```
+
+
+### stopifnot Base R function
+
+```{r}
+weather_report <- function(weather){
+  
+  stopifnot( #If these following conditions are NOT TRUE, return error
+    nrow(weather) > 15,
+    ncol(weather) == 4,
+    #check for missing values
+    drop_na(weather) == weather
+  )
+  
+  
+  
+  #put in checks on data first
+  weather %>% 
+    verify(temp >= -35 & temp <= 55) %>%            #Set range for temp  
+    verify(wind_speed >= 0 & wind_speed <= 108) %>% #Set range for w_s
+    verify(humidity >= 0 & humidity <= 100)         #Set range for hum 
+  
+  # Our average temperature, humidity and wind speed 
+  weather_means <- 
+  weather %>% 
+  summarise(
+    mean_temp = mean(temp),
+    mean_humidity = mean(humidity),
+    mean_windspeed = mean(wind_speed)
+  )
+
+# Show hot and humid days
+hot_and_humid <- 
+weather %>% 
+  filter(temp > 20) %>% 
+  filter(humidity > 55)
+
+return(list(weather_means, hot_and_humid))
+}
+
+weather_report(weather_2)
+```
+
+
+
+

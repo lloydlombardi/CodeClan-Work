@@ -1,0 +1,175 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+###FUNCTIONS
+
+`nchar()`
+`nchar(x, type = "chars", allowNA = FALSE, keepNA = NA)`
+```{r}
+#Need to make sure to either follow the above order ----
+nchar("hello", "chars", TRUE,  NA)
+
+#Or state their position explicitly ----
+nchar(type = "chars", allowNA = TRUE, x = "hello", keepNA = NA)
+```
+
+`paste()`
+`paste (..., sep = " ", collapse = NULL, recycle0 = FALSE)`
+
+```{r}
+paste("a", "b", "c", "d", sep = " and then, ")
+```
+
+### Writing your own function 
+
+```{r}
+function_name <- function() {
+  # stuff to do
+  # 
+  # end with the 'return' value
+  return(value)
+}
+```
+
+```{r}
+function_name <- function(par_1, par_2 = NULL, par_3 = "default_value"){
+  # stuff to do
+  # 
+  # end with the 'return' value
+  return(value)
+}
+```
+
+```{r}
+multiply_by_5 <- function(x) {
+  x * 5
+}
+
+multiply_by_5(2)
+```
+
+```{r}
+multiply_by <- function(x, y){
+  x * y
+}
+
+multiply_by(6, 9)
+```
+
+```{r}
+multiply_by <- function(x, y = 3){
+  x * y
+}
+
+multiply_by(6)
+```
+
+```{r}
+make_price <- function(x) {
+  paste0("£", x)
+}
+
+make_price(5)
+make_price(123)
+make_price(10.25)
+```
+
+### Triangular function
+$$
+T_n = \frac{n(n+1)}{2}
+$$
+
+### Create traingular function
+```{r}
+tri_nos <- function(n) {
+  n_plus1 <- n + 1
+  
+  numerator <- n * n_plus1
+  
+  denominator <- 2
+  
+  t_n <- numerator / denominator
+  
+  t_n
+}
+
+tri_nos(4)
+```
+
+### Create same function in one line
+
+```{r}
+tri_nos_2 <- function(n) {
+  n * (n + 1) / 2
+}
+
+tri_nos_2(4)
+```
+
+### Scope
+
+What can a function see?
+
+```{r}
+n <- 8
+
+multiply_by_n <- function(x) {
+  x * n
+}
+
+multiply_by_n(2)
+```
+
+
+```{r}
+multiply_by_n <- function(x, n) {
+  answer <- x * n
+  if (answer %% 2 == 1) {
+    z <- paste("x is odd")
+  } else{
+      z <- paste("x is even")
+  }
+  z
+}
+
+multiply_by_n(3, 3)
+```
+
+### Best practice for writing functions
+
+_good_ --- GIVE NAME WITH VERB
+_examples_:
+`add_3()`
+`format_number()`
+`read_data()`
+
+_bad_ --- DESCRIPTIVE NAMES
+_examples_
+`adder()`
+`number_formatter()`
+`data_reader()`
+
+__DRRY__ principal
+Don't repeat yourself
+
+
+###Debugging function
+
+```{r}
+tri_nos <- function(n) {
+  n_plus1 <- n + 1
+  
+  numerator <- n * n_plus1
+  
+  denominator <- 2
+  
+  t_n <- numerator / denominator
+  
+  t_n
+}
+
+debugonce(tri_nos)
+tri_nos(4)
+```
+
