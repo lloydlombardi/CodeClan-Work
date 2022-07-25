@@ -42,7 +42,7 @@ view(country_codes)
 ###Question 2
 ```{r}
 diet_comp_clean <- diet %>% 
-  pivot_longer(c(animal_fats_fao_2017:wheat_fao_2017),
+  pivot_longer(c(alcoholic_beverages_fao_2017:wheat_fao_2017),
                names_to = "kcal_source",
                values_to = "avg_daily_kcals")
 ```
@@ -70,9 +70,10 @@ diet_comp_clean %>%
 ```{r}
 missing_countries <- diet_comp_clean %>% 
   filter(is.na(code)) %>% 
-  distinct(country)
+  distinct(country) %>% 
+  pull()
 
-missing_countries_vector <- c(missing_countries)
+missing_countries
 ```
 
 ###Question 6
@@ -97,6 +98,115 @@ diet_comp_clean <- diet_comp_clean %>%
 ###Question 7 check
 ```{r}
 diet_comp_clean %>% 
-  filter(is.na(code)
+  filter(is.na(code))
 ```
+
+```{r}
+view(diet_comp_clean)
+```
+
+
+
+### Quesiton 8
+```{r}
+diet_code_test <- diet_comp_clean %>% 
+  inner_join(country_codes, by = c("code" = "alpha_3_code", "country")) %>% 
+  mutate(code_check = ifelse(alpha_2_code == str_extract_all(code, "[A-Z][A-Z]"),
+         TRUE, FALSE))
+
+diet_code_test
+```
+
+```{r}
+diet_code_test %>% 
+  filter(code_check == FALSE) %>% 
+  distinct(country)
+```
+
+###Question 9 & 10
+```{r}
+uk_diet_df <- diet_comp_clean %>% 
+  filter(country == "United Kingdom",
+         !is.na(avg_daily_kcals)) %>%
+  mutate(uk_diet = avg_daily_kcals,
+         uk_diet_annual_diff = (avg_daily_kcals * 365) - lag(avg_daily_kcals * 365))
+
+uk_diet_df %>% 
+  slice_max(uk_diet_annual_diff, n = 1)
+
+uk_diet_df %>% 
+  slice_min(uk_diet_annual_diff, n = 1)
+```
+
+###Question 11
+```{r}
+diet_comp_clean %>% 
+  filter(year >= 1990,
+         kcal_source == "Alcoholic beverages",
+         !is.na(avg_daily_kcals)) %>% 
+  group_by(year) %>% 
+  slice_max(avg_daily_kcals)
+```
+
+###Question 12
+This was my original code which worked
+This code was limited as it only worked to find one country and one year at a time
+```{r}
+
+top_calorie_source <- function(countries, years) {
+  diet_comp_clean %>% 
+  filter(country == countries,
+         year == years) %>% 
+    slice_max(avg_daily_kcals, n = 1)
+}
+
+top_calorie_source("Canada", 1995)
+```
+UK top calorie source:
+1965 - Wheat, 676
+1975 - Wheat, 621
+1985 - Wheat, 643
+1995 - Wheat, 658
+
+Zimbabwe top calorie source:
+1965 - Maize, 900
+1975 - Maize, 970
+1985 - Maize, 971
+1995 - Maize, 915
+
+Limitations:
+You can only search for a specific country and year, one at a time
+
+###Question 12 Updated
+Updates to the above so that the function takes a vector input for both countries and years:
+```{r}
+top_kcal_source <- function(data, countries, years) {
+  diet_comp_clean %>% 
+    filter(country %in% countries,
+           year %in% years) %>% 
+    group_by(country, year) %>% 
+    slice_max(avg_daily_kcals, n = 1)
+}
+
+top_kcal_source(diet_comp_clean, countries = c("United Kingdom", "Zimbabwe"), years = c(1965, 1975, 1985, 1995))
+```
+
+
+###Question 13
+
+```{r}
+b_countries <- diet_comp_clean %>% 
+  filter(str_detect(country, "^B")) %>%   #Filter for countries beginning with B
+  distinct(country) %>%                   #Use distinct to find individual countries
+  pull()                                  #Use pull to put them into a vector
+
+b_countries
+```
+
+```{r}
+top_kcal_source(diet_comp_clean, b_countries, 1970)
+```
+
+
+
 
