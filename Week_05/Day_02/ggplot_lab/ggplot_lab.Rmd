@@ -1,0 +1,172 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+late_deliveries <- read_csv("data/late_deliveries.csv")
+recovery_times <- read_csv("data/recovery_times.csv")
+fitness_levels <- read_csv("data/fitness_levels.csv")
+```
+
+```{r}
+late_deliveries %>% 
+  ggplot(aes(x = date,
+             y = late_deliveries)) +
+  geom_line() +
+  labs(x = "\nDate",
+       y = "Late Deliveries",
+       title = "Late Deliveries by Date\n")
+```
+
+```{r}
+deliveries <- late_deliveries %>% 
+  mutate(year = str_sub(date, 0,4))
+
+ggplot(deliveries)+
+  aes(year, late_deliveries)+
+  geom_col()
+```
+
+
+```{r}
+recovery_times %>% 
+  ggplot(aes(x = reorder(treatment_group, recovery),
+             y = recovery,
+             fill = prognosis)) + 
+  geom_col() +
+  labs(x = "\nTreatment Group",
+       y = "Recovery Time",
+       fill = "Prognosis")
+```
+
+
+```{r}
+fitness_levels %>% 
+  ggplot(aes(x = age,
+         y = fitness_score,
+         group = child,
+         colour = child)) +
+  geom_line() +
+  facet_wrap(~ group)
+```
+
+```{r}
+fitness_levels %>%
+  group_by(group, age) %>% 
+  mutate(mean_group_score = mean(fitness_score)) %>%
+  mutate(group = as_factor(group)) %>% 
+  ggplot() +
+  aes(x = age, y = mean_group_score, group = group, colour = group) +
+  geom_line()
+```
+
+
+
+```{r}
+fitness_levels %>%
+  ggplot(aes(x = group,
+             y = age,
+             fill = fitness_score)) +
+  geom_col() +
+  facet_wrap(~child)
+  labs(x = "\nGroup",
+       y = "age",
+       fill = "fitness score")
+```
+
+
+```{r}
+ggplot(fitness_levels)+
+  aes(child, fitness_score)+
+  geom_point(aes(colour = group))+
+  facet_grid(~age)+
+  theme(axis.ticks.x = element_blank(),
+        axis.text.x = element_blank())
+```
+
+
+```{r}
+blood_pressure <- read_csv("data/blood_pressure.csv")
+car_use <- read_csv("data/car_use.csv")
+```
+
+```{r}
+blood_pressure %>% 
+  ggplot(aes(x = daily_saturated_fat_intake_mg,
+             y = systolic_blood_pressure_mm_hg)) +
+  geom_point(size = 2) +
+  labs(x = "\nDaily Saturated Fat Intake (mg)",
+       y = "Systolic Blood Pressure (mm/hg)",
+       title = "Saturated Fat vs Blood Pressure\n")
+```
+
+```{r}
+car_use %>% 
+  ggplot(aes(x = car_use_percent,
+         y = air_so2_concentration_ppm)) +
+  geom_point(aes(size = population)) +
+  labs(x = "Car use percentage",
+       y = "Air SO2 Concentration(ppm)",
+       title = "SO2 concentration VS car se percentage\n")
+```
+
+
+```{r}
+car_use %>% 
+  ggplot(aes(x = car_use_percent,
+         y = population)) +
+  geom_point(aes(size = air_so2_concentration_ppm), shape = 21, fill = "lightblue") +
+  labs(x = "Car use percentage",
+       y = "Population",
+       title = "SO2 concentration VS car se percentage\n")
+```
+
+
+```{r}
+car_use %>% 
+  ggplot(aes(y = car_use_percent,
+         x = population)) +
+  geom_point(aes(size = air_so2_concentration_ppm), shape = 21, fill = "lightblue", alpha = 0.6) +
+  labs(y = "Car use percentage",
+       x = "Population",
+       title = "SO2 concentration VS car se percentage\n")
+```
+
+
+```{r}
+d20 <- read_csv("data/d20_outcomes.csv")
+d20x5 <- read_csv("data/d20x5_outcomes.csv")
+```
+
+```{r}
+d20 %>% 
+  ggplot(aes(x = outcome)) +
+  geom_histogram(aes(colour = "red"), bins = 5)
+```
+
+
+```{r}
+d20x5 %>% 
+  ggplot(aes(x = outcome)) +
+  geom_histogram(bins = 16)
+```
+
+
+```{r}
+pension_surplus <- read_csv("data/pension_surplus.csv")
+pension_liabilities <- read_csv("data/pension_liabilities.csv")
+```
+
+```{r}
+pension_liabilities %>% 
+  ggplot(aes(x = year,
+             y = liability_millions,
+             fill = liability_type)) +
+  geom_col()
+```
+

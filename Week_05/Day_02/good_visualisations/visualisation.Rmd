@@ -1,0 +1,101 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(CodeClanData)
+
+total_sales <- total_sales
+```
+
+
+```{r}
+total_sales %>% 
+  ggplot(aes(x = sales,
+             y = branch,
+             fill = branch == "Leeds")) +
+  geom_col()
+```
+
+```{r}
+total_sales %>% 
+  ggplot(aes(x = sales,
+             y = branch,
+             fill = branch == "Leeds")) +
+  geom_col() +
+  scale_fill_manual(values = c("grey", "red"), guide = "none")
+```
+
+```{r}
+pal <- c("grey", Leeds = "red")
+
+total_sales %>% 
+  ggplot(aes(x = sales,
+             y = branch,
+             fill = branch == "Leeds")) +
+  geom_col() +
+  scale_fill_manual(values = pal, guide = "none")
+```
+
+
+```{r}
+total_sales_anno <- total_sales %>% 
+  mutate(label_text = ifelse(branch == "Leeds",
+                                        "The Leeds branch has sales of 715k",
+                                        NA))
+
+total_sales_anno %>% 
+  ggplot(aes(x = sales,
+             y = branch,
+             fill = branch == "Leeds")) +
+  geom_col() +
+  scale_fill_manual(values = c("grey", "red"), guide = "none") +
+  geom_text(aes(label = label_text),
+            colour = "red",
+            size = 4,
+            hjust = 0)
+```
+
+Suppose we’re doing a comparison between January and April now. We want to understand which branches are improving. For this we can look in the dataset monthly_sales. The variable difference_from_january has each month’s sales differences from January.
+
+```{r}
+monthly_sales %>% 
+  mutate(month = factor(month, levels = c("Jan", "Feb", "March", "April")))
+
+head(monthly_sales)
+
+ggplot(monthly_sales) +
+  aes(x = branch, y = sales, fill = month) +
+  geom_col(position = "dodge") +
+  coord_flip()
+```
+
+
+
+```{r}
+monthly_sales_april <- monthly_sales %>% 
+  filter(month == "April") 
+
+min_max <- max(abs(monthly_sales_april$difference_from_jan))
+
+ggplot(monthly_sales_april) +
+  aes(
+    x = reorder(branch, difference_from_jan),
+    y = difference_from_jan,
+    fill = difference_from_jan > 0
+  ) +
+  geom_col() +
+  ylim(-min_max, min_max) +
+    labs(y = "Difference in sales", x = "Branch location", title = "Sales differences between January and April") + 
+  scale_fill_manual(values = c("tomato", "seagreen"), name = "", labels = c("decrease", "increase")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+
+
+
+
+
