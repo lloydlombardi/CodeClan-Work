@@ -1,0 +1,197 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+pets <- read_csv("data/pets.csv")
+```
+
+```{r}
+pets %>% 
+  ggplot(aes(x = weight,
+             y = age)) +
+  geom_point(colour = "#1b458f", size = 5)
+```
+
+```{r}
+pets %>% 
+  ggplot(aes(x = weight,
+             y = age)) +
+  geom_point(colour = "#e51636", size = 5)
+```
+
+Colour Palettes
+```{r}
+pets %>% 
+  ggplot(aes(x = animal, 
+             fill = sex)) +
+  geom_bar()
+```
+
+```{r}
+pets %>% 
+  ggplot(aes(x = age,
+             y = weight,
+             colour = sleep)) +
+  geom_point()
+```
+
+Continuous colours - sequential & diverging
+
+Sequential - 2-colour gradient
+
+```{r}
+pets %>% 
+  ggplot(aes(x = age,
+             y = weight,
+             colour = sleep)) +
+  geom_point() +
+  scale_color_gradient(high = "grey100",
+                       low = "grey0")
+```
+
+
+```{r}
+pets %>% 
+  ggplot(aes(x = age,
+             y = weight,
+             colour = sleep)) +
+  geom_point(size = 4) +
+  scale_color_gradient(high = "#1b458f",
+                       low = "#e51636")
+```
+
+Divergent scale - 3-colour gradient
+```{r}
+pets %>% 
+  ggplot(aes(x = age,
+             y = weight,
+             colour = sleep)) +
+  geom_point(size = 4) +
+  scale_color_gradient2(low = "#1b458f",
+                        mid = "white",
+                        high = "#e51636",
+                        midpoint = median(pets$sleep)) +
+  theme_bw()
+```
+
+```{r}
+students <- read_csv("data/students.csv")
+```
+
+```{r}
+students <- students %>% 
+  mutate(school_year = factor(school_year,
+         levels = c("Year 7",
+                    "Year 8",
+                    "Year 9",
+                    "Year 10",
+                    "Year 11",
+                    "Year 12")))
+```
+
+```{r}
+students %>% 
+  ggplot(aes(x = school_year,
+             fill = superpower)) +
+  geom_bar()
+```
+
+Manual palette
+```{r}
+students %>% 
+  distinct(superpower) %>% 
+  pull()
+
+students %>% 
+  ggplot(aes(x = school_year,
+             fill = superpower)) +
+  geom_bar() +
+  scale_fill_manual(
+    values = c(
+      "Fly" = "#1b458f",
+      "Freeze time" = "white",
+      "Invisibility" = "orange",
+      "Telepathy" = "#e51636"
+    )
+  )
+```
+
+```{r}
+pets %>% 
+  ggplot(aes(x = weight,
+             y = age,
+             colour = sleep)) +
+  geom_point() +
+  scale_color_distiller(palette = "RdPu")
+```
+
+```{r}
+students %>% 
+  ggplot(aes(x = school_year,
+             fill = superpower)) +
+  geom_bar() +
+  scale_fill_brewer(palette = "Set1")
+```
+
+```{r}
+students %>% 
+  ggplot(aes(x = school_year,
+             fill = superpower)) +
+  geom_bar() +
+  theme_minimal()
+```
+
+Format text
+```{r}
+students %>% 
+  ggplot(aes(x = school_year,
+             fill = superpower)) +
+  geom_bar() +
+  theme(axis.text = element_text(size = 16))
+```
+
+```{r}
+students %>% 
+  ggplot(aes(x = school_year,
+             fill = superpower)) +
+  geom_bar() +
+  theme(axis.text = element_text(face = "bold"))
+```
+
+
+```{r}
+students %>% 
+  ggplot(aes(x = favorite_school_subject)) +
+  geom_bar() +
+  theme(axis.text.x = element_text(angle = 45,
+                                   hjust = 1))
+```
+
+
+```{r}
+students %>% 
+  ggplot(aes(x = favorite_school_subject)) +
+  geom_bar() +
+  coord_flip()
+```
+
+
+```{r}
+scottish_exports <- read_csv("data/scottish_exports.csv")
+```
+
+
+
+
+
+
+
+
+
+

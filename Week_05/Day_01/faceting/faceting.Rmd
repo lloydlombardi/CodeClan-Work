@@ -1,0 +1,121 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+chick_weight <- ChickWeight %>% janitor::clean_names()
+
+chick_weight %>% 
+  ggplot(aes(x = time,
+             y = weight,
+             group = chick,
+             colour = diet)) +
+  geom_line()
+```
+
+Use `facet_wrap` to get 4 separate charts, based on diet types
+```{r}
+chick_weight %>% 
+  ggplot(aes(x = time,
+             y = weight,
+             group = chick,
+             colour = diet)) +
+  geom_line() +
+  facet_wrap(~ diet)
+```
+
+```{r}
+chick_weight %>% 
+  ggplot(aes(x = time,
+             y = weight,
+             group = chick,
+             colour = diet)) +
+  geom_line() +
+  facet_wrap(~ diet,
+             nrow = 1)
+```
+
+Task
+```{r}
+benefits <- read_csv("data/benefits.csv")
+```
+
+```{r}
+benefits %>% 
+  ggplot(aes(x = age,
+             fill = sex)) +
+  geom_histogram() +
+  facet_wrap(~ sex)
+```
+
+```{r}
+benefits %>% 
+  ggplot(aes(x = age,
+             fill = sex)) +
+  geom_histogram(colour = "white") +
+  facet_wrap(~ sex)
+```
+
+```{r}
+benefits %>% 
+  ggplot(aes(x = age,
+             fill = sex)) +
+  geom_histogram(colour = "white") +
+  facet_grid(married ~ sex)
+```
+
+```{r}
+benefits %>% 
+  ggplot(aes(x = age,
+             fill = sex)) +
+  geom_histogram(colour = "white") +
+  facet_grid(married ~ sex,
+             labeller = "label_both")
+```
+
+```{r}
+benefits %>% 
+  ggplot(aes(x = age,
+             fill = sex)) +
+  geom_histogram(colour = "white") +
+  facet_wrap(~ sex,
+             nrow  = 1,
+             scales = "free_y")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

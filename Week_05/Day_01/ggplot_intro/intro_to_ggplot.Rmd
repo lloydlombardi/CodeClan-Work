@@ -1,0 +1,298 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+students <- read_csv("data/students.csv")
+```
+
+```{r}
+students %>% 
+  head(10)
+```
+We want to visualise the frequency of superpower instance amoungst students
+```{r}
+students %>% 
+  ggplot(aes(x = superpower)) +
+  geom_bar()
+```
+
+Customisation: colour
+Inside or outside the aes mapping
+The below will colour the bars
+```{r}
+students %>% 
+  ggplot(aes(x = superpower)) +
+  geom_bar(fill = "light blue")
+```
+
+Customisation: colour
+Inside or outside the aes mapping
+The below will fill the bar blue and colour the outside red
+```{r}
+students %>% 
+  ggplot(aes(x = superpower)) +
+  geom_bar(fill = "light blue",
+           colour = "red")
+```
+
+
+
+Customisation: colour
+Inside or outside the aes mapping
+The below will change each bar into observations for each school year
+```{r}
+students %>% 
+  ggplot(aes(x = superpower,
+             fill = school_year)) +
+  geom_bar()
+```
+
+
+Position adjustments
+Instead of stacking the data vertically, `dodge` places them beside each other
+```{r}
+students %>% 
+  ggplot(aes(x = superpower,
+             fill = school_year)) +
+  geom_bar(position = "dodge")
+```
+
+`fill` position gives each bar the same height and returns a proportion on a scale of 0-1
+```{r}
+students %>% 
+  ggplot(aes(x = superpower,
+             fill = school_year)) +
+  geom_bar(position = "fill")
+```
+
+Statistical transformations
+```{r}
+students %>% 
+  ggplot(aes(x = superpower,
+             fill = school_year)) +
+  geom_bar(stat = "count")
+```
+
+
+```{r}
+count_data <- students %>% 
+  group_by(superpower, school_year) %>% 
+  summarise(counts = n())
+```
+
+```{r}
+count_data %>% 
+  ggplot(aes(x = superpower,
+             y = counts,
+             fill = school_year)) +
+  geom_bar(stat = "identity")
+```
+
+```{r}
+count_data %>% 
+  ggplot(aes(x = superpower,
+             y = counts,
+             fill = school_year)) +
+  geom_col()
+```
+
+Labels
+```{r}
+students %>% 
+  ggplot(aes(x = superpower,
+             fill = school_year)) +
+  geom_bar() +
+  labs(x = "\nSuperpower",
+       y = "Count",
+       title = "Preferred Superpower by School Year",
+       subtitle = "Data from students around the world\n",
+       fill = "School Year")
+```
+
+
+Task
+```{r}
+olympics <- read_csv("data/olympics_overall_medals.csv")
+```
+
+
+```{r}
+top_10 <- olympics %>% 
+  filter(season == "Summer", medal == "Gold") %>% 
+  slice_max(count, n = 10)
+```
+
+```{r}
+top_10 %>% 
+  ggplot(aes(x = team,
+             y = count,
+             fill = medal)) +
+  geom_col() +
+  labs(x = "\nTeam",
+       y = "Gold Medal Count",
+       title = "Olympic Gold Medals by Country\n",
+       subtitle = "Data from Olympic medal table\n",
+       fill = "Medal Type")
+```
+
+Layers
+```{r}
+library(janitor)
+```
+
+```{r}
+chick_weight <- ChickWeight %>% clean_names()
+```
+
+```{r}
+chick_weight %>% 
+  ggplot(aes(x = time,
+             y = weight,
+             group = chick,
+             colour = diet)) +
+  geom_line()
+```
+
+
+```{r}
+chick_weight %>% 
+  ggplot(aes(x = time,
+             y = weight,
+             group = chick,
+             colour = diet)) +
+  geom_line() +
+  geom_point()
+```
+
+```{r}
+chick_weight %>% 
+  ggplot(aes(x = time,
+             y = weight,
+             colour = diet)) +
+  geom_line(aes(group = chick)) +
+  geom_point() +
+  geom_smooth()
+```
+
+
+```{r}
+chick_weight %>% 
+  ggplot(aes(x = time,
+             y = weight,
+             colour = diet)) +
+  geom_line(aes(group = chick),
+            alpha = 0.25) +
+  geom_point(alpha = 0.5) +
+  geom_smooth()
+```
+
+Task
+
+```{r}
+students %>% 
+  ggplot(aes(x = height_cm,
+             y = reaction_time)) +
+  geom_point(colour = "blue") +
+  labs(x = "\nHeight (cm)",
+       y = "Reaction Time (s)",
+       title = "Relationship of Student Height and Reaction Time\n")
+```
+
+```{r}
+students %>% 
+  ggplot(aes(x = height_cm,
+             y = reaction_time,
+             colour = superpower)) +
+  geom_point() + 
+   labs(x = "\nHeight (cm)",
+       y = "Reaction Time (s)",
+       title = "Relationship of Student Height and Reaction Time\n",
+       subtitle = "Points based on student's superpower choice")
+```
+
+```{r}
+students %>% 
+  ggplot(aes(x = height_cm,
+             y = reaction_time,
+             colour = superpower)) +
+  geom_point() + 
+  scale_y_reverse() +
+   labs(x = "\nHeight (cm)",
+       y = "Reaction Time (s)",
+       title = "Relationship of Student Height and Reaction Time\n",
+       subtitle = "Points based on student's superpower choice\n")
+```
+
+
+```{r}
+pets <- read_csv("data/pets.csv")
+```
+
+```{r}
+pets %>% 
+  ggplot(aes(x = age,
+         y = weight,
+         colour = sex)) +
+  geom_point(aes(shape = animal),
+             size = 4) +
+  geom_text(aes(label = name),
+                nudge_x = 0.6) 
+```
+
+```{r}
+pets %>% 
+  ggplot(aes(x = age,
+         y = weight,
+         colour = sex)) +
+  geom_point(aes(shape = animal),
+             size = 4) +
+  geom_text(aes(label = name),
+            nudge_x = 0.6,
+            nudge_y = 0.1,
+            data = pets %>% filter(name == "Fluffy"))
+```
+
+Saving
+```{r}
+ggsave("g1_sav.png")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
