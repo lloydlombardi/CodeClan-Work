@@ -1,0 +1,48 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+
+olympic_medals <- read_csv("data/olympics_overall_medals.csv")
+```
+
+- jump between brackets - control + p
+- indent things - control + i
+
+```{r}
+a(
+  b(
+    c(
+      d(
+        e(
+          f(
+            
+          )
+        )
+      )
+    )
+  )
+)
+```
+
+## Widgets
+```{r}
+widgetInput(inputId = "id",
+            label = "widget label",
+            choices = c("choice A", "choice B", "choice C"))
+```
+
+## Plot
+```{r}
+olympics_medals %>% 
+  filter(team == "Great Britain",
+         season == "Winter") %>%
+ggplot(aes(x = medal, 
+           y = count, 
+           fill = medal)) +
+  geom_col()
+```
+

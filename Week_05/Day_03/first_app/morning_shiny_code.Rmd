@@ -1,0 +1,67 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+library(shiny)
+library(tidyverse)
+library(bslib)
+
+olympics_medals <- read_csv("data/olympics_overall_medals.csv")
+
+all_seasons <- unique(olympics_medals$season)
+all_teams <- unique(olympics_medals$team)
+
+olympics_medals <- olympics_medals %>% 
+  mutate(medal = factor(medal, c("Gold", "Silver", "Bronze")))
+
+# User Interface
+ui <- fluidPage(
+  
+  theme = bs_theme(bootswatch = "superhero"),
+  
+  titlePanel(tags$h1("Olympic medals")),
+  
+  sidebarLayout(
+    sidebarPanel = sidebarPanel(
+      p(strong("Sidebar")),
+      p("Olympic Medals Info"),
+      radioButtons(inputId = "season_input",
+                   label = tags$em("Summer or Winter Olympics?"),
+                   choices = all_seasons
+                   ),
+      
+      selectInput(inputId = "team_input",
+                  label = "Which team?",
+                  choices = all_teams
+                  )
+    ),
+    
+    mainPanel = mainPanel(
+      "Main panel",
+      br(),
+      br(),
+      "Some other text in the main section",
+      plotOutput("medal_plot"),
+      
+      #HTML: HyperText Markup Language
+      tags$a("The Olympics website", href = "https://www.Olympic.org")
+    )
+  )
+)
+
+server <- function(input, output) {
+  
+  output$medal_plot <- renderPlot({
+    olympics_medals %>% 
+      filter(team == input$team_input,
+             season == input$season_input) %>%
+      ggplot(aes(x = medal, 
+                 y = count, 
+                 fill = medal)) +
+      geom_col()
+  })
+}
+
+# Run the application 
+shinyApp(ui = ui, server = server)
