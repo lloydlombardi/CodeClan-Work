@@ -1,0 +1,97 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+
+cb <- read_csv("data/colour_blindness.csv")
+```
+
+
+
+```{r}
+cb %>% 
+  tabyl(bio_sex, cblind) %>% 
+  adorn_totals(where = c("row", "col"))
+
+cb %>% 
+  tabyl(bio_sex, cblind) %>% 
+  adorn_percentages(denominator = "all") %>% 
+  adorn_title()
+```
+
+```{r}
+prob_female <- cb %>% 
+  summarise(prob = sum(bio_sex == "female") / n())
+
+prob_female
+```
+
+```{r}
+prob_male <- cb %>% 
+  summarise(prob = sum(bio_sex == "male") / n())
+
+prob_male
+```
+
+```{r}
+c_blind <- cb %>% 
+  summarise(prob = sum(cblind == TRUE) / n())
+
+c_blind
+```
+
+
+```{r}
+not_c_blind <- cb %>% 
+  summarise(prob = sum(cblind == FALSE) / n())
+
+not_c_blind
+```
+
+```{r}
+prob_female_cb <- cb %>% 
+  filter(bio_sex == "female" & cblind) %>% 
+  summarise(prob = n() / nrow(cb))
+
+prob_female_cb
+```
+
+
+```{r}
+prob_male_cb <- cb %>% 
+  filter(bio_sex == "male" & cblind) %>% 
+  summarise(prob = n() / nrow(cb))
+
+prob_male_cb
+```
+
+
+## Dependent and Independent Events
+
+The below are not equal
+That means they are dependent on each other
+```{r}
+prob_female * c_blind
+prob_female_cb
+```
+
+
+## Conditional Probabilities
+
+What is the prob of a person being colour blind, given that we know they are female?
+What proportion of female people are colour blind?
+```{r}
+prob_cb_given_female <- cb %>% 
+  filter(bio_sex == "female") %>% 
+  summarise(prob = sum(cblind) / n())
+
+prob_cb_given_female
+```
+Assumption:
+16% of colour blind people are women
+0.4% of women are colour blind
+

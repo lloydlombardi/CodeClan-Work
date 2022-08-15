@@ -1,0 +1,74 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+source("prob.R")
+```
+
+```{r}
+s_two_dice <- rolldie(2)
+
+s_two_dice
+```
+
+Create event to find possible outcomes for a combination of 7
+Use filter function to check totals
+```{r}
+s_two_dice %>% 
+  filter(X1 + X2 == 7)
+```
+
+Add new column to store total of dice numbers
+```{r}
+s_two_dice <- s_two_dice %>% 
+  mutate(total = X1 + X2)
+
+s_two_dice
+```
+
+```{r}
+s_sum_equals_seven <- s_two_dice %>% 
+  filter(total == 7)
+
+s_sum_equals_seven
+```
+
+```{r}
+s_sum_gt_ten <- s_two_dice %>% 
+  filter(total > 10)
+
+s_sum_gt_ten
+```
+
+
+Task - 5 mins
+Add your own random variable to s_two_dice, and then use your new random variable to define an event space. Some suggestions:
+random variable: first_die_even, event: first_die_even == TRUE
+random variable: die2_minus_die1, event: die2_minus_die1 == -2
+random variable: differ_by_two, event: differ_by_two == FALSE
+```{r}
+even <- c(2, 4, 6)
+s_two_dice <- s_two_dice %>% 
+  mutate(first_die_even = X1 %in% even) %>% 
+  filter(first_die_even)
+
+s_two_dice
+```
+
+
+same as above but using %% 
+```{r}
+s_two_dice <- s_two_dice %>% 
+  mutate(first_die_even_mod = X1 %% 2 == 0) %>% 
+  filter(first_die_even)
+
+s_two_dice
+```
+

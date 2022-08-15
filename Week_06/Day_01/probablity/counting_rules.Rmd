@@ -1,0 +1,204 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Counting Rules
+
+```{r}
+s <- rolldie(2)
+
+total_seven <- s %>% filter(X1 + X2 == 7)
+
+total_seven
+```
+
+Find probabilty of both dice totalling 7
+total_seven = EVENT OUTCOMES
+s           = ALL OUTCOMES
+```{r}
+nrow(total_seven) / nrow(s)
+```
+
+```{r}
+s_die <- rolldie(1)
+s_coin <- tosscoin(1)
+
+s_total <- merge(s_die, s_coin)
+s_total
+```
+
+What's the probability of throwing a Head, then a 6
+```{r}
+head_six <- s_total %>% 
+  filter(toss1 == "H",
+         X1 == 6)
+head_six
+
+nrow(head_six) / nrow(s_total)
+```
+
+```{r}
+library(gtools)
+```
+
+
+```{r}
+permutations(4, 4, repeats.allowed = TRUE)
+```
+
+
+```{r}
+employees <- c("Alice", "Bob", "Carole", "David", "Elaine", "Fred", "Gabra", "Hua", "Inigo", "Hugo")
+
+seniors <- as_tibble(permutations(n = 10, r = 3, v = employees, repeats.allowed = FALSE))
+
+seniors <- seniors %>% 
+  rename(CEO = V1, CTO = V2, COO = V3)
+
+seniors
+```
+
+What is the possibility of Alice being selected as CEO and Bob as CTO, if the process is random?
+```{r}
+alice_and_bob <- seniors %>% 
+  filter(CEO == "Alice",
+         CTO == "Bob")
+
+alice_and_bob
+
+nrow(alice_and_bob) / nrow(seniors)
+```
+
+
+```{r}
+num_draws <- choose(50, 6)
+num_draws
+
+options(scipen = 99)
+1 / num_draws
+```
+
+Task:
+Use the `combinations()` function in gtools for this task (don’t try to do it manually). 
+
+I have five flavours of ice cream to choose from:
+flavours <- c("vanilla", "chocolate", "raspberry", "strawberry", "pistachio")
+
+and a bowl that can hold three scoops.
+
+How many different variations in bowls of ice cream can I have assuming:
+- Each scoop must be a different flavour
+- I can repeat flavours if I wish?
+
+```{r}
+flavours <-  c("vanilla", "chocolate", "raspberry", "strawberry", "pistachio")
+num_scoops <- 3
+
+scoop_1 <- combinations(n = length(flavours), r = num_scoops, v = flavours, repeats.allowed = FALSE)
+scoop_1
+
+nrow(scoop_1)
+
+scoop_2 <- combinations(n = length(flavours), r = num_scoops, v = flavours, repeats.allowed = TRUE)
+scoop_2
+
+nrow(scoop_2)
+```
+
+
+
+```{r}
+s_four_coins <- tosscoin(4)
+
+s_four_coins
+```
+
+
+What's the probability that at least 2 HEADS are tossed
+```{r}
+s_four_coins <- s_four_coins %>% 
+  mutate(num_heads = rowSums(. == "H"))
+
+s_at_least_2_heads <- s_four_coins %>% 
+  filter(num_heads >= 2)
+
+s_at_least_2_heads
+
+prob_2_heads <- nrow(s_at_least_2_heads) / nrow(s_four_coins)
+```
+
+Find the compliment of the event above 
+```{r}
+1 - prob_2_heads
+```
+
+
+## AND combinations
+```{r}
+ s_four_coins <- s_four_coins %>% 
+  mutate(num_tails = rowSums(. == "T"))
+
+s_four_coins %>% 
+  filter(num_heads >= 1,
+         num_tails >= 1) %>% 
+  summarise(prob = n()/nrow(s_four_coins))
+```
+
+
+##OR combinations
+```{r}
+s_two_dice <- rolldie(2)
+
+s_two_dice %>% 
+  filter(X1 %% 2 == 0 | X2 == 5) %>% 
+  summarise(n() / nrow(s_two_dice))
+```
+
+Optional Task - 10 mins
+
+Let’s check the addition law for ourselves. Calculate probabilities for each event below:
+- first_die_even
+- second_die_5
+- first_die_even AND second_die_5
+Then use these probabilities in the expression from above
+prob(A∪B)=prob(A)+prob(B)−prob(A∩B)
+and check you get the same probability for prob(first_die_even OR second_die_5)
+as we obtained from the last block of code.
+
+
+```{r}
+s_two_dice <- rolldie(2)
+
+first_die_even <- s_two_dice %>% 
+  filter(X1 %% 2 == 0) %>% 
+  summarise(n() / nrow(s_two_dice))
+
+first_die_even
+
+second_die_5 <- s_two_dice %>% 
+  filter(X2 == 5) %>% 
+  summarise(n() / nrow(s_two_dice))
+
+second_die_5
+
+and_dice <- s_two_dice %>% 
+  filter(X1 %% 2 == 0 & X2 == 5) %>% 
+  summarise(n() / nrow(s_two_dice))
+
+and_dice
+
+or_dice <- s_two_dice %>% 
+  filter(X1 %% 2 == 0 | X2 == 5) %>% 
+  summarise(n() / nrow(s_two_dice))
+
+or_dice
+
+p_A_U_B <- first_die_even + second_die_5 - and_dice
+
+p_A_U_B
+```
+
+
+
+
