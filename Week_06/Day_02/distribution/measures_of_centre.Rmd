@@ -1,0 +1,244 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+source("prob.R")
+```
+
+
+```{r}
+tosscoin(1) %>% 
+  mutate(p = 1/n())
+```
+
+What is the probability of each of the 8 possible outcomes when tossing 3 coins?
+```{r}
+s_three_coins_labelled <- tosscoin(3) %>% 
+  mutate(outcome = str_c(toss1, toss2, toss3, sep = ""),
+         prob = 1 / n())
+
+s_three_coins
+
+s_three_coins_labelled %>% 
+  ggplot(aes(x = outcome,
+             y = prob)) +
+  geom_col()
+```
+- All the bars are the same height as they have the same probability
+- This is a __UNIFORM__ distribution
+
+
+What are the probabilities of getting 0 heads, 1 head, 2 heads, or 3 heads when tossing 3 coins?
+```{r}
+s_three_coins <- tosscoin(3) %>% 
+  mutate(outcome = str_c(toss1, toss2, toss3, sep = ""),
+         prob = 1 / n())
+
+s_diff_h <- s_three_coins %>% 
+  mutate(n_heads = str_count(outcome, "H")) %>% 
+  group_by(n_heads) %>% 
+  summarise(prob = sum(prob))
+
+s_diff_h
+
+s_diff_h %>% 
+  ggplot(aes(x = n_heads,
+             y = prob)) +
+  geom_col()
+```
+The probability distribution is __no longer__ uniform
+We would call this a __discrete__ probability distrubtion (finite/ countable)
+
+General Properties of __discrete__ probability distributions:
+
+- x-axis = outcomes
+- y-axis = probability
+- the probabilities ___must___ sum to 1
+
+$$
+\sum{p(x)} = 1
+$$
+
+
+## Measures of Centrality
+
+- mean 
+- median
+- mode
+
+These are all expressing where the centre of our distribution is. 
+The are different measures of the middle of a distribution
+
+```{r}
+library(janitor)
+library(lubridate)
+```
+
+
+```{r}
+aircon <- read_csv("data/AirConSales.csv")
+
+aircon <- aircon %>% 
+  clean_names() %>% 
+  mutate(date = mdy(date))
+# when converting to a proper date type, lubridate functions ask what format the date is currently in
+# always returns the format yyyy-mm-dd
+
+aircon
+```
+for every date, we have how many units were sold.
+we are interested in how often it is to sell a certain number of units
+e.g. how often/likely is it that on any day we sell 3 units
+
+```{r}
+sales_freq <- aircon %>% 
+  tabyl(units_sold)
+```
+percent in the tabyl doesn't refer to a probability / percent, but a relative frequency
+
+
+```{r}
+sales_freq %>% 
+  ggplot(aes(x = units_sold,
+             y = percent)) +
+  geom_col()
+```
+
+Mean
+= sum of values / n of values
+
+$$
+\mu = population
+$$
+
+$$
+\bar{x} = sample
+$$
+
+
+```{r}
+aircon %>% 
+  summarise(mean_daily_sales = mean(units_sold))
+```
+
+Median
+= middle value of sorted values
+
+[0, 3, 5, 2, 7, 8]
+
+[0, 2, 3, 5, 7, 8]
+
+median = 4
+
+```{r}
+aircon %>% 
+  summarise(median = median(units_sold))
+```
+
+
+Mode
+= the most frequent value in the data
+
+Mode function:
+```{r}
+get_mode <- function(data){
+
+  tabled_data <- table(data)
+  table_names <- names(tabled_data)
+  
+  return( table_names[tabled_data == max(tabled_data)] )
+  
+}
+```
+
+
+```{r}
+aircon %>% 
+  summarise(mode = get_mode(units_sold))
+```
+A bit of dispute over where the _middle_ of our distribution is
+
+mean = 6
+median = 4
+mode = 3
+
+Which one is _correct_?
+
+The _mean_ is the most likely to be affected by _extreme outliers_
+
+This illustrates that:
+> It is very important to visualise your distribution and look at it
+
+
+Distribution Shapes (Modality)
+
+How many modes does the distribution have?
+
+- one mode  (one peak)  = unimodal
+- two modes (two peaks) = bimodal
+
+
+Skewness
+= the asymmetry of a distribution
+
+> left skewed (tail of distribution points left) - mean is being skewed to the left
+> right skewed (tail of distribution points right) - mean is being skewed to the right
+> symmetric (neither left or right skewed)
+
+We can quantify skew (express numerically)
+
+```{r}
+library(e1071)
+```
+
+When quantifying skew, we can use the following class table
+
+| magnitude | classification |
+| ------ | ------ |
+| < 0.5 | fairly symmetric |
+| 0.5 - 1.0 | moderately skewed |
+| > 1.0 | highly skewed |
+
+| direction | classification |
+| ------ | ------ |
+| negative | left skew |
+| positive | right skew |
+
+Example:
+> skew = -0.8 (moderately left skewed)
+> skew = 1.2 (highly right skewed)
+
+using `{e1071}` to calculate skew
+use Type 1
+```{r}
+aircon %>% 
+  summarise(
+    skew = skewness(units_sold, type = 1)
+  )
+```
+> Always visualise the data _before_ performing any further statistical analysis
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

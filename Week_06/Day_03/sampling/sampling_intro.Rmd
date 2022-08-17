@@ -1,0 +1,205 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+
+```{r}
+library(tidyverse)
+library(janitor)
+
+telco <- read_csv("data/telecomms_churn.csv") %>%  clean_names()
+```
+
+
+```{r}
+glimpse(telco)
+```
+
+
+We will treat this data set as the _whole population_
+
+We can therefore calculate the _population parameters_
+> Usually, this cannot be done as we won't have the whole pop
+
+
+Find:
+> The mean monthly charges
+> The mean tenure
+> The proportion of customer churns
+
+```{r}
+summary_popn <- telco %>% 
+  summarise(
+    mean_monthly_charges = mean(monthly_charges),
+    mean_tenure = mean(tenure),
+    prop_churn = sum(churn == "Yes") / n()
+  )
+
+summary_popn
+```
+
+
+```{r}
+telco %>% 
+  ggplot(aes(x = monthly_charges)) +
+  geom_histogram(col = "white",
+                 fill = "steel blue",
+                 alpha = 0.7)
+```
+
+```{r}
+telco %>% 
+  ggplot(aes(x = tenure)) +
+  geom_histogram(col = "white",
+                 fill = "steel blue",
+                 alpha = 0.7)
+```
+
+
+```{r}
+telco %>% 
+  ggplot(aes(x = churn)) +
+  geom_bar(col = "white",
+                 fill = "steel blue",
+                 alpha = 0.7)
+```
+
+Let's start taking random samples for purposes of the lesson
+```{r}
+library(infer)
+```
+
+
+```{r}
+sample_200 <- telco %>% 
+  rep_sample_n(size = 200, reps = 1)
+
+sample_200
+```
+From the sample of 200, find:
+> The mean monthly charges
+> The mean tenure
+> The proportion of customer churns
+> Be sure to ungroup the data!!!!
+
+```{r}
+summary_sample_200 <- sample_200 %>%
+  ungroup() %>% 
+  summarise(
+    mean_monthly_charges = mean(monthly_charges),
+    mean_tenure = mean(tenure),
+    prop_churn = sum(churn == "Yes") / n()
+  )
+
+summary_sample_200
+```
+
+Find the difference betweem the summary tables to find the _sampling errors_
+```{r}
+summary_sample_200 - summary_popn
+```
+
+
+```{r}
+rep_sample_200 <- telco %>% 
+  rep_sample_n(size = 200, reps = 5000) %>% 
+  summarise(
+    mean_monthly_charges = mean(monthly_charges),
+    mean_tenure = mean(tenure),
+    prop_churn = sum(churn == "Yes") / n()
+  )
+
+rep_sample_200
+```
+
+
+```{r}
+rep_sample_200 %>% 
+  ggplot(aes(x = mean_monthly_charges)) +
+  geom_histogram(col = "white",
+                 fill = "steel blue",
+                 alpha = 0.7) +
+  labs(x = "mean monthly_charges from each sample")
+```
+
+
+```{r}
+rep_sample_200 %>% 
+  ggplot(aes(x = mean_tenure)) +
+  geom_histogram(col = "white",
+                 fill = "steel blue",
+                 alpha = 0.7) +
+  labs(x = "mean tenure from each sample")
+```
+
+
+```{r}
+rep_sample_200 %>% 
+  ggplot(aes(x = prop_churn)) +
+  geom_histogram(col = "white",
+                 fill = "steel blue",
+                 alpha = 0.7,
+                 binwidth = 0.01) +
+  labs(x = "proportion churn from each sample")
+```
+
+
+```{r}
+std_errors <- rep_sample_200 %>% 
+  summarise(
+    se_mean_monthly_charges = sd(mean_monthly_charges),
+    se_mean_tenure = sd(mean_tenure),
+    se_prop_churn = sd(prop_churn)
+  )
+
+std_errors
+```
+
+```{r}
+rep_sample_100 <- telco %>% 
+  rep_sample_n(size = 100, reps = 5000) %>% 
+  summarise(
+    mean_monthly_charges = mean(monthly_charges),
+    mean_tenure = mean(tenure),
+    prop_churn = sum(churn == "Yes") / n()
+  )
+
+std_errors_100 <- rep_sample_100 %>% 
+  summarise(
+    se_mean_monthly_charges = sd(mean_monthly_charges),
+    se_mean_tenure = sd(mean_tenure),
+    se_prop_churn = sd(prop_churn)
+  )
+
+std_errors_100
+```
+
+
+```{r}
+library(fastGraph)
+```
+
+
+```{r}
+shadeDist(
+  xshade = c(60, 70),
+  lower.tail = FALSE,
+  ddist = "dnorm",
+  parm1 = mean(rep_sample_200$mean_monthly_charges),
+  parm2 = std_errors$se_mean_monthly_charges,
+  xlab = "mean_monthly charges"
+)
+```
+
+
+
+
+
+
+
+
+
+
+

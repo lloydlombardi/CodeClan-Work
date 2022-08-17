@@ -1,0 +1,134 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+
+heart <- read_csv("data/heart.csv") %>% clean_names()
+```
+
+
+```{r}
+glimpse(heart)
+```
+
+
+```{r}
+heart %>% 
+  ggplot(aes(x = thalach)) +
+  geom_histogram(col = "white")
+```
+
+
+```{r}
+heart %>% 
+  ggplot(aes(x = exang)) +
+  geom_bar()
+```
+
+
+```{r}
+pop_para <- heart %>% 
+  summarise(mean_thalac = mean(thalach),
+            prop_exang = sum(exang) / n())
+
+pop_para
+```
+
+
+```{r}
+library(infer)
+```
+
+
+```{r}
+sample_heart_50 <- heart %>% 
+  rep_sample_n(size = 50, reps = 1)
+
+summ_sample_50 <- sample_heart_50 %>%
+  ungroup() %>% 
+  summarise(
+    mean_thalac = mean(thalach),
+            prop_exang = sum(exang) / n()
+  )
+```
+
+```{r}
+sample_errors <- summ_sample_50 - pop_para
+
+sample_errors
+```
+
+
+```{r}
+rep_sample_50 <- heart %>% 
+  rep_sample_n(size = 50, reps = 5000) %>% 
+  summarise(
+    mean_thalac = mean(thalach),
+    prop_exang = sum(exang) / n())
+
+rep_sample_50
+```
+
+
+```{r}
+rep_sample_50 %>% 
+  ggplot(aes(x = mean_thalac)) +
+  geom_histogram(col = "white")
+
+rep_sample_50 %>% 
+  ggplot(aes(x = prop_exang)) +
+  geom_histogram(col = "white",
+                 binwidth = 0.02)
+```
+
+
+```{r}
+std_errors_50 <- rep_sample_50 %>% 
+  summarise(
+    se_mean_thalac = sd(mean_thalac),
+    se_prop_exang = sd(prop_exang)
+  )
+
+std_errors_50
+```
+
+
+```{r}
+rep_sample_100 <- heart %>% 
+  rep_sample_n(size = 100, reps = 5000) %>% 
+  summarise(
+    mean_thalac = mean(thalach),
+    prop_exang = sum(exang) / n())
+
+std_errors_100 <- rep_sample_100 %>% 
+  summarise(
+    se_mean_thalac = sd(mean_thalac),
+    se_prop_exang = sd(prop_exang)
+  )
+
+std_errors_100
+```
+
+
+```{r}
+rep_sample_200 <- heart %>% 
+  rep_sample_n(size = 200, reps = 5000) %>% 
+  summarise(
+    mean_thalac = mean(thalach),
+    prop_exang = sum(exang) / n())
+
+std_errors_200 <- rep_sample_200 %>% 
+  summarise(
+    se_mean_thalac = sd(mean_thalac),
+    se_prop_exang = sd(prop_exang)
+  )
+
+std_errors_200
+```
+
+
+

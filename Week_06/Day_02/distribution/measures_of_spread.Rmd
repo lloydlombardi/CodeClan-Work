@@ -1,0 +1,361 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+What does our distribution look like???
+
+How far apart are the values typically???
+
+Is it a very narrow & tall distribution, or is it more wide & short???
+
+Range
+
+= max value - min value
+
+```{r}
+library(tidyverse)
+library(janitor)
+jobs <- read_csv("data/TyrellCorpJobs.csv") %>% 
+  select(-1) %>% 
+  clean_names()
+```
+
+
+```{r}
+jobs %>% 
+  summarise(range = diff(range(salary)))
+
+jobs %>% 
+  summarise(range = range(salary))
+```
+The range of our data is $61,568
+
+> We MUST visualise our data 
+
+```{r}
+jobs %>% 
+  ggplot(aes(x = salary)) +
+  geom_histogram(col = "white", bins = 25)
+```
+
+```{r}
+jobs %>% 
+  ggplot(aes(x = salary)) +
+  geom_histogram(col = "white", bins = 25) +
+  facet_wrap(~ position)
+```
+There is strong evidence of __bimodality__
+
+
+```{r}
+jobs %>% 
+  group_by(position) %>% 
+  summarise(
+    range = diff(range(salary))
+  )
+```
+There is _more_ salary disparity in management than in accounting
+
+Range is also _heavily affected_ by extreme values
+Most accounting salaries are between 30-40k - the range suggests a spreak of 15k ~50% more
+
+Less influenced by outliers is the __INTERQUARTILE RANGE__
+
+There are _3_ quartiles which split the data into _4_
+
+> 0 - 25 | _Q1_ | 25 - 100
+> 0 - 50 | _Q2_ | 50 - 100 (median)
+> 0 - 75 | _Q3_ | 75 - 100
+
+interquartile range = range of q1 to q3
+
+```{r}
+jobs %>% 
+  group_by(position) %>% 
+  summarise(
+    q1 = quantile(salary, 0.25),
+    q2 = quantile(salary, 0.5),
+    q3 = quantile(salary, 0.75),
+    iqr = q3 - q1,
+    iqr_from_stats = IQR(salary)
+  )
+```
+
+The five figure summary
+   
+Min.   :29459 ---> min value
+1st Qu.:33038 ---> q1
+Median :35009 ---> q2 / median
+Mean   :39383 ---> mean
+3rd Qu.:41990 ---> q3
+Max.   :91027 ---> max value
+
+```{r}
+summary(jobs)
+```
+
+```{r}
+library(skimr)
+```
+
+
+
+```{r}
+jobs %>% 
+  group_by(position) %>% 
+  skim()
+```
+
+Five figues summary using `skim()`
+
+p0   ---> min value
+p25  ---> q1
+p50  ---> q2 / median
+mean ---> mean
+p75  ---> q3
+p100 ---> max value
+
+
+A more graphical view of quartiles: Box Plots
+
+```{r}
+jobs %>% 
+  group_by(position) %>% 
+  summarise(
+    q1 = quantile(salary, 0.25),
+    q2 = quantile(salary, 0.5),
+    q3 = quantile(salary, 0.75),
+    iqr = q3 - q1,
+    iqr_from_stats = IQR(salary),
+    outlier_distance = 1.5 * iqr
+  )
+```
+For Accounting:
+- IF a value is 4311.75 below q1, this is an outlier 
+- IF a value is 4311.75 above q3, this is an outlier
+
+For Management:
+- IF a value is 20385.75 below q1, this is an outlier 
+- IF a value is 20385.75 above q3, this is an outlier
+
+```{r}
+jobs %>% 
+  ggplot(aes(x = salary,
+             y = position)) +
+  geom_boxplot() +
+  stat_boxplot(geom = "errorbar", width = 0.5)
+```
+
+
+
+Task - 10 mins
+Investigate and comment on the centrality and spreads of `distribution_1` and `distribution_2` produced by the following function calls.
+Use `geom_boxplot()` and `skim()` first
+Next, plot histograms to confirm your descriptions.
+[Don’t worry about what the functions generating distribution_1 and distribution_2 are doing]
+
+```{r}
+set.seed(42) # means we'll all get the same randomly generated data
+distribution_1 <- tibble(
+  y = append(
+    rnorm(n = 100, mean = 5, sd = 10), 
+    rnorm(n = 200, mean = 5, sd = 1))
+)
+
+distribution_2 <- tibble(
+  y = runif(n = 1000, min = -30, max = 30)
+)
+```
+
+```{r}
+distribution_1 %>% 
+  ggplot(aes(x = y)) +
+  geom_boxplot() +
+  stat_boxplot(geom = "errorbar", width = 0.25)
+```
+
+
+```{r}
+distribution_1 %>%
+  skim()
+```
+
+
+
+```{r}
+distribution_2 %>% 
+  ggplot(aes(x = y)) +
+  geom_boxplot()  +
+  stat_boxplot(geom = "errorbar", width = 0.25)
+```
+
+
+```{r}
+distribution_2 %>%
+  skim()
+```
+
+
+```{r}
+distribution_1 %>% 
+  ggplot(aes(x = y)) +
+  geom_histogram(col = "white", bins = 50)
+```
+
+
+```{r}
+distribution_2 %>% 
+  ggplot(aes(x = y)) +
+  geom_histogram(col = "white", bins = 50)
+```
+
+
+```{r}
+library(e1071)
+```
+
+
+```{r}
+distribution_2 %>% 
+  summarise(skew = skewness(y, type = 1))
+```
+highly symmetric distribution
+
+
+```{r}
+right_skewed <- read_csv("data/heavily_right_skewed.csv")
+```
+
+
+```{r}
+right_skewed %>% 
+  summarise(skew = skewness(x, type = 1))
+```
+highly right skewed
+
+
+```{r}
+right_skewed %>% 
+  ggplot(aes(x = x)) +
+  geom_boxplot()
+```
+> 1. Long tail of outliers to the right of the box
+> 2. Q2 (median) is closer to Q1 than to Q3
+> 3. Left whisker is shorter than right whisker 
+
+
+```{r}
+right_skewed %>% 
+  ggplot(aes(x = x)) +
+  geom_histogram(col = "white")
+```
+
+
+```{r}
+right_skewed %>% 
+  skim()
+```
+
+ 
+ 
+ ## Variance
+ 
+ > a single number value for a measure of spread
+ > a measure of how far each value in the data set is from the mean
+ 
+ [3, 6, 4, 20, 4]
+ 
+```{r}
+num_set <- c(3, 6, 4, 20, 4)
+
+mean(num_set)
+```
+ > sum of the differences from the mean squared and then divided by the total number of elements - 1
+ > mean difference from the mean 
+ 
+ A hypothetical example
+ 
+ - a survey people about their weight
+  - marathon runners
+  - commuters
+  - the mean weights are the same
+
+sampled 50 from each group
+ 
+```{r}
+set.seed(42)
+
+londoner_weights <- tibble(
+  marathoners = rnorm(50, mean = 68, sd = 0.5),
+  commuters = rnorm(50, mean = 68, sd = 5)
+) %>% 
+  pivot_longer(cols = everything(), names_to = "group", values_to = "weight")
+
+ggplot(londoner_weights) +
+  aes(x = weight, y = group) +
+  geom_boxplot()
+```
+ 
+ 
+```{r}
+londoner_weights %>% 
+  group_by(group) %>% 
+  summarise(
+    mean_weight = mean(weight),
+    var_weight = var(weight),
+    st_dev_weight = sd(weight),
+    st_dev_long = sqrt(var_weight)
+  )
+```
+ weight = kg
+ variance = kg^2
+ std dev = sqrt(varriance)
+ std dev = kg
+ 
+ the average deviance from the mean weight of commuters (68.5kg) was 4.6kg
+ 
+ # Calculating variance longhand
+ 
+ $$
+ s^2 = \frac{1}{n-1}\sum{(x - \bar{x})^2}
+ $$
+To calculate variance:
+> get the difference between each value and the mean
+> square each value
+> add up these squared values
+> divide by number of total values - 1
+
+To calculate the standard deviation:
+> sqrt the variance
+
+Task:
+Calculate the variance and standard deviation for the salaries in accounting & management
+
+```{r}
+jobs %>% 
+  group_by(position) %>% 
+  summarise(var_salary = var(salary),
+            st_dev_salary = sd(salary))
+  
+```
+- The standard deviation of management is > 4x more than that of accounting
+- Values of management salaries are much more spread
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,139 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(infer)
+```
+
+
+```{r}
+telco <- read_csv("data/telecomms_churn.csv") %>% clean_names()
+```
+
+
+```{r}
+sample_200 <- telco %>% 
+  rep_sample_n(size = 200, reps = 1)
+
+summary_sample_200 <- sample_200 %>% 
+  summarise(
+    mean_monthly_charges = mean(monthly_charges),
+    mean_tenure = mean(tenure),
+    prop_churn = mean(churn == "Yes")
+  )
+
+summary_sample_200
+```
+
+```{r}
+summary_pop <- telco %>% 
+  summarise(
+    mean_monthly_charges = mean(monthly_charges),
+    mean_tenure = mean(tenure),
+    prop_churn = mean(churn == "Yes")
+  )
+
+summary_pop
+```
+
+
+Bootstrap resampling
+
+```{r}
+sample_200 <- read_csv("data/telecomms_churn_200_sample.csv") %>%  clean_names()
+```
+
+
+```{r}
+bootstrap_resample_200 <- sample_200 %>% 
+  rep_sample_n(size = 200, 
+               reps = 5000,
+               replace = TRUE) %>% 
+  summarise(
+    mean_monthly_charges = mean(monthly_charges),
+    mean_tenure = mean(tenure)
+  )
+
+bootstrap_resample_200
+```
+
+
+```{r}
+bootstrap_resample_200 %>% 
+  ggplot(aes(x = mean_tenure)) +
+  geom_histogram(col = "white")
+```
+
+
+```{r}
+std_error_bootstrap_200 <- bootstrap_resample_200 %>% 
+  summarise(
+    sd_mean_tenure = sd(mean_tenure)
+  )
+
+std_error_bootstrap_200
+```
+
+
+Confidence Intervals
+
+```{r}
+ci_95 <- bootstrap_resample_200 %>% 
+  summarise(
+    mean = mean(mean_tenure),
+    lower_bound = quantile(mean_tenure, probs = 0.025),
+    upper_bound = quantile(mean_tenure, probs = 0.975)
+  )
+
+ci_95
+```
+
+
+infer workflow
+
+```{r}
+infer_resample <- sample_200 %>% 
+  specify(response = tenure) %>% 
+  generate(reps = 5000, type = "bootstrap") %>% 
+  calculate(stat = "mean")
+
+infer_resample
+```
+
+
+```{r}
+infer_ci_95 <- infer_resample %>% 
+  get_ci(level = 0.95, type = "percentile")
+
+infer_ci_95
+```
+
+
+```{r}
+infer_resample %>% 
+  visualise(bins = 30) +
+  shade_ci(endpoints = infer_ci_95)
+```
+
+
+```{r}
+mean_inferrq <- infer_resample %>% 
+  summarise(mean = mean(stat))
+
+mean_infer
+```
+
+
+
+
+
+
+
+
+
+
+
