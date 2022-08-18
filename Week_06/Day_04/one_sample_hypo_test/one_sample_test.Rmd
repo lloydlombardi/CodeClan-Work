@@ -1,0 +1,104 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(infer)
+
+books <- read_csv("data/books.csv")
+
+books_tidy <- books %>%
+  clean_names() %>%
+  filter(!is.na(average_rating)) %>%
+  rename(num_pages = number_num_pages) %>%
+  glimpse()
+```
+
+
+> Question:
+Does the proportion of books in the GoodReads db that _lack text reviews_ differ _significantly_ from 7%?
+
+
+> Step 1 formulate Hypothesis 
+
+```{r}
+books_tidy %>% 
+  group_by(text_reviews_count) %>% 
+  summarise(prop = n() / nrow(books_tidy)) %>% 
+  filter(text_reviews_count == 0)
+```
+
+
+Null Hypothesis
+
+The proportion of books that lack text reviews count is not different to 7%
+$$
+H_0: π_{no\ reviews} = 7\% 
+$$
+
+
+Alternative Hypothesis
+
+The proportion of books that lack text reviews count is different to 7%
+$$
+H_1: π_{no\ reviews} \neq 7\%
+$$
+
+
+> Step 2 Calculate statistics
+
+$$
+\frac{number\ of\ books\ with\ no\ text\ review}{total\ number\ of\ books}
+$$
+```{r}
+books_tidy_prop <- books_tidy %>% 
+  mutate(has_no_reviews = text_reviews_count == 0)
+
+books_tidy_prop
+```
+
+```{r}
+null_distribution <- books_tidy_prop %>% 
+  specify(response = has_no_reviews, success = "TRUE") %>% 
+  hypothesise(null = "point", p = 0.07) %>% 
+  generate(reps = 5000, type = "draw") %>% 
+  calculate(stat = "prop")
+
+null_distribution
+```
+
+```{r}
+null_distribution %>% 
+  visualise(bins = 30)
+```
+
+```{r}
+observed_stat <- books_tidy_prop %>% 
+  specify(response = has_no_reviews, success = "TRUE") %>% 
+  calculate(stat = "prop")
+
+observed_stat
+```
+
+
+```{r}
+null_distribution %>% 
+  visualise(bins = 30) +
+  shade_p_value(obs_stat = observed_stat, direction = "both") 
+```
+
+```{r}
+p_value <- null_distribution %>% 
+  get_p_value(obs_stat = observed_stat$stat, direction = "both")
+
+p_value
+```
+
+Since our p_value (0.026) < alpha (0.05) we can _reject_ the Null hypothesis.
+Therefore, our proprtion of books without a text review is _significantly_ different.
+
+
+

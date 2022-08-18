@@ -1,0 +1,346 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(infer)
+library(janitor)
+```
+
+
+```{r}
+nice <- read_csv("data/nice.csv")
+algarve <- read_csv("data/algarve.csv")
+corfu <- read_csv("data/corfu.csv")
+florence <- read_csv("data/florence.csv")
+```
+
+
+## Independent Samples
+
+Remember __independent__ means the observations are not associated with each 
+
+Null hypothesis
+The mean price of lets in the Algarve is not different to the mean price of lets in Nice
+$$
+H_0: µ_{mean\ price\ lets\ algarve} =\  µ_{mean\ price\ lets\ nice}
+$$
+
+Alternative hypothesis
+The mean price of lets in the Algarve is different to the mean price of lets in Nice
+$$
+H_1: µ_{mean\ price\ lets\ algarve} >\  µ_{mean\ price\ lets\ nice}
+$$
+
+
+```{r}
+apart_prices <- bind_rows(nice = nice,
+                          algarve = algarve,
+                          .id = "location")
+
+apart_prices
+```
+
+
+```{r}
+nice_dist <- apart_prices %>% 
+  filter(location == "nice")
+
+nice_dist %>% 
+  ggplot(aes(x = price)) +
+  geom_histogram(col = "white", bins = 15)
+
+
+algrave_dist <- apart_prices %>% 
+  filter(location == "algarve")
+
+algrave_dist %>% 
+  ggplot(aes(x = price)) +
+  geom_histogram(col = "white", bins = 15)
+
+apart_prices %>% 
+  ggplot(aes(x = location,
+             y = price)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.2, colour = 2)
+```
+
+
+```{r}
+null_distribution <- apart_prices %>% 
+  specify(price ~ location) %>%  # is the y-axis affected by the x-axis
+  #specify(response = price, explanatory = location) alternative to above
+  hypothesise(null = "independence") %>% 
+  generate(reps = 1000, type = "permute") %>% 
+  calculate(stat = "diff in means", order = c("algarve", "nice"))
+
+null_distribution
+```
+
+
+```{r}
+observed_stat <- apart_prices %>% 
+  specify(price ~ location) %>% 
+  calculate(stat = "diff in means", order = c("algarve", "nice"))
+
+observed_stat
+```
+On average, there is a difference of 251.4 between the algarve and nice
+
+
+```{r}
+null_distribution %>% 
+  visualise(bins = 15) +
+  shade_p_value(obs_stat = observed_stat, direction = "right")
+```
+
+
+```{r}
+p_value <- null_distribution %>% 
+  get_p_value(obs_stat = observed_stat, direction = "right")
+
+p_value
+```
+
+Never, ever, ever, ever, ever report p = 0
+p < 0.0001
+
+
+
+Corfu and Florence Task
+
+alpha = 0.05
+
+Null hypothesis
+There is no significant difference between the mean let prices in Florence and Corfu
+$$
+H_0: µ_{mean\ price\ lets\ florence} =\  µ_{mean\ price\ lets\ corfu}
+$$
+
+Alternative hypothesis
+The mean let prices in Florence are significantly lower than those in Corfu
+$$
+H_1: µ_{mean\ price\ lets\ florence} <\  µ_{mean\ price\ lets\ corfu}
+$$
+
+```{r}
+apartment_prices <- bind_rows(florence = florence,
+                              corfu = corfu,
+                              .id = "location")
+
+apartment_prices
+```
+
+
+```{r}
+apartment_prices %>% 
+  ggplot(aes(x = location,
+             y = price)) +
+  geom_boxplot() +
+  geom_jitter(width = 0.2, colour = 2)
+```
+
+
+```{r}
+fc_null_distribution <- apartment_prices %>% 
+  specify(price ~ location) %>% 
+  hypothesise(null = "independence") %>% 
+  generate(reps = 5000, type = "permute") %>% 
+  calculate(stat = "diff in means", order= c("florence", "corfu")) # order depends on hypothesis and question!!
+
+fc_null_distribution
+```
+
+
+```{r}
+fc_observed_stat <- apartment_prices %>% 
+  specify(price ~ location) %>% 
+  calculate(stat = "diff in means", order = c("florence", "corfu"))
+
+fc_observed_stat
+```
+
+
+```{r}
+fc_null_distribution %>% 
+  visualise(bins = 15) +
+  shade_p_value(obs_stat = fc_observed_stat, direction = "left")
+```
+
+
+```{r}
+p_value <- fc_null_distribution %>% 
+  get_p_value(obs_stat = fc_observed_stat, direction = "left")
+
+p_value
+```
+
+Paired Samples (aka dependent)
+
+```{r}
+textbooks <- read_csv("data/ucla_textbooks_f18.csv")
+```
+
+> Is there a significant difference on _average_ between the prices for _new texts_ offfered by the _campus bookstore_ vs the prices available for the same texts on _Amazon_?
+
+Null hypo
+$$
+H_0: µ_{diff\ new} =\ 0
+$$
+
+Alt hypo
+$$
+H_1:µ_{diff\ new} \neq\ 0
+$$
+
+
+```{r}
+books_diff <- textbooks %>%
+  mutate(diff_new = bookstore_new - amazon_new) %>%
+  filter(!is.na(diff_new))
+
+books_diff %>%
+  ggplot(aes(x = diff_new)) +
+  geom_histogram()
+```
+
+
+```{r}
+null_dist <- books_diff %>% 
+  specify(response = diff_new) %>% 
+  hypothesise(null = "point", mu = 0) %>% 
+  generate(reps = 5000, type = "bootstrap") %>% 
+  calculate(stat = "mean")
+
+null_dist
+```
+
+
+```{r}
+observed_stat <- books_diff %>% 
+  specify(response = diff_new) %>% 
+  calculate(stat = "mean")
+
+observed_stat
+```
+
+
+```{r}
+null_dist %>% 
+  visualise() +
+  shade_p_value(obs_stat = observed_stat, direction = "both")
+```
+
+
+```{r}
+p_value <- null_dist %>% 
+  get_p_value(obs_stat = observed_stat, direction = "both")
+
+p_value
+```
+
+Our study suggests that the prices in the UCLA book shop are significantly different from the prices on Amazon, on avergae (p = 0.048)
+
+
+Task:
+On average, are the prices of used course texts _lower on Amazon_ than at the campus bookstore?
+
+alpha = 0.05
+
+Null hypo
+$$
+H_0: µ_{diff\ used\ texts\ } =\ 0
+$$
+
+Alt hyp 
+$$
+H_1: µ_{diff\ used\ texts\ } > 0
+$$
+
+```{r}
+books <- textbooks %>% 
+  mutate(diff_used = amazon_used - bookstore_used) %>% 
+  filter(!is.na(diff_used))
+
+used_null_dist <- books %>% 
+  specify(response = diff_used) %>% 
+  hypothesise(null = "point", mu = 0) %>% 
+  generate(reps = 5000, type = "bootstrap") %>% 
+  calculate(stat = "mean")
+
+used_observed_stat <- books %>% 
+  specify(response = diff_used) %>% 
+  calculate(stat = "mean")
+
+used_null_dist %>% 
+  visualise() +
+  shade_p_value(obs_stat = used_observed_stat, direction = "left")
+
+used_p_value <- null_dist %>% 
+  get_p_value(obs_stat = used_observed_stat, direction = "left")
+
+used_p_value
+```
+
+
+We would like to test whether the proportion of Obama voters who were women and the proportion of Romney voters who were women is significantly different (at a significance level α=0.05).
+
+```{r}
+poll <- read_csv("data/election_data.csv")
+```
+
+
+Null hypo
+$$
+H_0: π_{women\ for\ Obama\ } - π_{women\ for\ Romney} = 0
+$$
+
+Alt hypo
+$$
+H_1: π_{women\ for\ Obama\ } - π_{women\ for\ Romney} \neq \ 0
+$$
+
+
+```{r}
+ggplot(poll, aes(x = vote, fill = gender)) +
+  geom_bar(position = "fill") +
+  coord_flip()
+```
+
+
+```{r}
+observed_stat_poll <- poll %>% 
+  specify(gender ~ vote, success = "woman") %>% 
+  calculate(stat = "diff in props", order = c("obama", "romney"))
+
+observed_stat_poll
+```
+
+
+```{r}
+poll_null_dist <- poll %>% 
+  specify(gender ~ vote, success = "woman") %>% 
+  hypothesise(null = "independence") %>% 
+  generate(reps = 5000, type = "permute") %>%
+  calculate(stat = "diff in props", order = c("obama", "romney"))
+```
+
+
+```{r}
+poll_null_dist %>%
+  visualise() +
+  shade_p_value(obs_stat = observed_stat_poll, direction = "both")
+```
+
+
+```{r}
+p_val <- poll_null_dist %>% 
+  get_p_value(obs_stat = observed_stat_poll, direction = "both")
+
+p_val
+```
+
+
+

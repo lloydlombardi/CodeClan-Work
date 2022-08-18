@@ -1,0 +1,214 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(infer)
+
+books <- read_csv("data/books.csv")
+
+books_tidy <- books %>%
+  clean_names() %>%
+  filter(!is.na(average_rating)) %>%
+  rename(num_pages = number_num_pages) %>%
+  glimpse()
+```
+
+
+
+```{r}
+books_tidy %>% 
+  ggplot(aes(x = average_rating)) +
+  geom_histogram(col = "white")
+
+books_tidy %>% 
+  ggplot(aes(x = average_rating)) +
+  geom_jitter(aes(y = 0), height = 0.2) +
+  geom_boxplot(colour = 2)
+  
+```
+
+
+The data we have is from 2020 Good Reads
+We are going to test to see if the 2020 average rating is different from the 2016 average rating
+
+The 2020 data is a __SAMPLE__
+the 2016 data is a __POPULATION__
+
+```{r}
+#2020 average rating
+mean(books_tidy$average_rating)
+```
+
+The 2016 average rating is 3.93
+The 2020 average rating is 3.937568
+
+We are going to set up 2 _competing hypotheses_
+
+
+__Null__ hypothesis           : H0    $H_0$
+> framed as the _skeptical_ position
+> the hypothesis of:
+    > no difference
+    > no change
+    > things are the same
+
+Example:
+        The average rating from 2020 is _not_ difference form the average rating from 2016
+
+__ALternative__ hypothesis    : H1    $H_1$ or  $H_a$
+> framed as the 
+> the hypothesis of:
+    > difference
+
+Example:
+        The average rating from 2020 _is_ different form the average rating from 2016
+        
+
+Our 2 hypothesis must be:
+    > mutually exclusive
+    > exhaustive
+
+$$
+H_0 : µ_{average\ rating} = 3.93
+$$
+
+
+$$
+H_0 : µ_{average\ rating} \neq 3.93
+$$
+
+Greek letters used to represent population parameters
+$$
+\mu = population\ mean\\\\\\\ 
+\pi = population\ proportion
+$$
+
+
+```{r}
+#2020 average rating
+observed_stat <- mean(books_tidy$average_rating)
+```
+IS 2020 __significantly__ different from 2016's 3.93????
+
+Steps of a hypothesis test:
+
+> Step 1
+
+_Before_ we look at the data:
+    > decide on our _significance level_ (set a threshold - what counts as significant
+                                          sets the error rate)
+    > significance level (alpha level) is usually _0.05_
+    > we can expect to wrongly reject H0 1:20 times
+    
+> Step 2
+
+Calculate the statistic from the sample
+> in this example it is the _mean_
+
+> Step 3
+
+Create the sampling distribution - bootstrapping
+
+_VERY IMPORTANT_
+when we create the sampling distribution we _assume that it is TRUE_
+
+> Step 4
+
+Compare our calculated statistic with the sampling distribution 
+
+If the calculated stat is far enough into the tail of our _Null_ distribution
+we call it __significant__ == __p-value__
+
+> Step 5
+
+If the p-value is < alpha
+  > we _reject_ H0
+  > find evidence in support of our H1
+  
+If the p-value is not < alpha
+  > we _do not reject_ H0
+  > failed to find evidence in support of our H1
+
+# Hypothesis Testing with `infer`
+
+```{r}
+bootstrap_distn <- books_tidy %>%
+  specify(response = average_rating) %>%
+  generate(reps = 5000, type = "bootstrap") %>%
+  calculate(stat = "mean")
+```
+
+
+```{r}
+null_bootstrap_distn <- books_tidy %>%
+  specify(response = average_rating) %>%
+  hypothesise(null = "point", mu = 3.93) %>% 
+  generate(reps = 5000, type = "bootstrap") %>%
+  calculate(stat = "mean")
+```
+
+
+```{r}
+#2020 average rating
+observed_stat <- mean(books_tidy$average_rating)
+```
+
+
+```{r}
+# two-tailed test
+null_bootstrap_distn %>% 
+  visualise(bins = 30) +
+  shade_p_value(obs_stat = observed_stat, direction = "both")
+```
+# Two tailed test
+# No direction specified
+$$
+H_0 : µ_{average\ rating} \neq 3.93
+$$
+# Get p-value
+```{r}
+p_value <- null_bootstrap_distn %>% 
+  get_p_value(obs_stat = observed_stat, direction = "both")
+
+p_value
+```
+
+What does the p-value actually mean?
+
+> How likely is it to see a result as extreme as your observed results, _if the null hypothesis is TRUE_ ?
+
+> If the null was TRUE, how weird would this data be?
+
+> Extreme = less than alpha
+
+__Don't say__
+> The p value is the probability that H0 is correct
+
+********************************************************************************
+Result:
+Our observed stat of 3.9375679 is significantly different from out Null stat of 3.93,
+at an alpha level of 0.05
+We therefore find evidence that the 2020 user rating mean is different to the 2016 user rating mean
+
+Because p-value = 0.0208 < alpha = 0.05
+********************************************************************************
+
+
+
+```{r}
+# one-tailed test
+null_bootstrap_distn %>% 
+  visualise(bins = 30) +
+  shade_p_value(obs_stat = observed_stat, direction = "right")
+```
+# One tailed test
+# Direction specified
+$$
+H_0 : µ_{average\ rating} > 3.93
+$$
+
+
