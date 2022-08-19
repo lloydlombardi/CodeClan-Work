@@ -101,4 +101,44 @@ Since our p_value (0.026) < alpha (0.05) we can _reject_ the Null hypothesis.
 Therefore, our proprtion of books without a text review is _significantly_ different.
 
 
+French language books:
+
+alpha = 0.01
+H0: pi = 0.015
+H1: pi < 0.015
+
+```{r}
+french_books <- books_tidy %>% 
+  mutate(is_french = language_code == "fre")
+```
+
+
+```{r}
+french_observed_stat <- french_books %>% 
+  specify(response = is_french, success = "TRUE") %>% 
+  calculate(stat = "prop")
+```
+
+
+```{r}
+french_null_dist <- french_books %>% 
+  specify(response = is_french, success = "TRUE") %>% 
+  hypothesise(null = "point", p = 0.015) %>% 
+  generate(reps = 5000, type = "draw") %>% 
+  calculate(stat = "prop")
+```
+
+
+```{r}
+french_null_dist %>% 
+  visualise(bins = 30) +
+  shade_p_value(obs_stat = french_observed_stat, direction = "left")
+```
+
+```{r}
+french_null_dist %>% 
+  get_p_value(obs_stat = french_observed_stat, direction = "left")
+```
+
+
 

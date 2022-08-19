@@ -212,3 +212,46 @@ H_0 : µ_{average\ rating} > 3.93
 $$
 
 
+Do books in Spanish have a mean(average_rating) significantly less than 3.96?
+
+alpha = 0.05
+H0: mu = 3.96
+H1: mu < 3.96
+
+```{r}
+spanish_books <- books_tidy %>% 
+  filter(language_code == "spa")
+```
+
+
+```{r}
+spanish_observed_stat <- spanish_books %>% 
+  specify(response = average_rating) %>% 
+  calculate(stat = "mean")
+```
+
+
+```{r}
+spanish_null_distribution <- spanish_books %>% 
+  specify(response = average_rating) %>% 
+  hypothesise(null = "point", mu = 3.96) %>% 
+  generate(reps = 5000, type = "bootstrap") %>% 
+  calculate(stat = "mean")
+```
+
+
+```{r}
+spanish_null_distribution %>% 
+  visualise() +
+  shade_p_value(obs_stat = spanish_observed_stat, direction = "left")
+```
+
+
+```{r}
+spanish_p_value <- spanish_null_distribution %>% 
+  get_p_value(obs_stat = spanish_observed_stat, direction = "left")
+
+spanish_p_value
+```
+
+
