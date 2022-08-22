@@ -1,0 +1,110 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+```
+
+
+```{r}
+tour <- read_csv("data/tour_de_france.csv")
+```
+
+
+# Q2.
+Fix the date columns in the dataset so they are in date ISO format.
+
+```{r}
+tour <- tour %>% 
+  mutate(start_date = mdy(start_date),
+         born = dmy(born),
+         died = mdy(died))
+```
+
+
+# Q3. 
+Now do a data check. Tour de France begins in June or July (usually, COVID was the exception). Create a month column which checks whether or not this is consistent and you only have these months in the start_date options.
+
+```{r}
+tour <- tour %>% 
+  mutate(month_start = month(start_date, label = TRUE, abbr = FALSE),
+         month_check = month_start %in% c("June", "July"))
+```
+
+```{r}
+tour %>% 
+  group_by(month_start) %>% 
+  summarise(count = n())
+```
+
+# Q4.
+What day of the week is most common for the tour to start?
+```{r}
+tour <- tour %>% 
+  mutate(day_of_week_start = wday(start_date, label = TRUE, abbr = FALSE))
+```
+
+
+```{r}
+tour %>% 
+  group_by(day_of_week_start) %>% 
+  summarise(count = n()) %>% 
+  arrange(desc(count))
+```
+
+
+# Q5. 
+Add a date column to your dataset that captures which date each tour finished? Hint: It lasts 23 days.
+```{r}
+tour <- tour %>% 
+  mutate(finish_date = start_date + days(23),
+         .after = start_date)
+```
+
+# Q6. 
+What age was each rider when they started the tour? Hint: you’ll need to calculate the time period between when the race started, and when they were born. You can then format this (recap the “periods” section in the classnotes).
+
+```{r}
+tour <- tour %>% 
+  mutate(race_age = as.period(start_date - born, "years"),
+         race_age_years = as.numeric(race_age, "years"))
+```
+
+# Q7.
+Let’s say a plane leaves Sydney Australia at 2.15pm on the 7th August 2018, and arrives at 5.40am on the 8th August 2018 in London. Create these two dates with the appropriate time zones.
+
+```{r}
+date_1 <- ymd_hms("2018-08-7 14:15:00", tz = "Australia/Sydney")
+
+date_2 <- ymd_hms("2018-08-08 05:40:00", tz = "Europe/London")
+```
+
+
+# Q8.
+Work out how long the duration between take off and landing is.
+
+```{r}
+duration <- as.numeric(as.period(date_2 - date_1), "hours")
+```
+
+
+# Q9. 
+Say you left London at 6.20am on the 10th August 2018, and the total flight time including stop-overs was 28 hours and 46 minutes. At what time and date would you arrive in Sydney, Australia?
+
+```{r}
+take_off <- ymd_hms("2018-08-10 06:20:00", tz = "Europe/London")
+
+arrival <- take_off + hours(28) + minutes(46)
+
+arrival_aus <- with_tz(arrival, tzone = "Australia/Sydney")
+```
+
+
+
+
+
+
+

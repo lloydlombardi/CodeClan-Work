@@ -1,0 +1,288 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(lubridate)
+```
+
+
+```{r}
+library(tsibble)
+library(tsibbledata)
+library(janitor)
+```
+
+
+## `tsibble`
+
+__index__: time component
+__Key__  : identifies the underlyinf structure of the data
+         : in conjunction with the __index__ uniquely identifies each row
+
+
+```{r}
+vic_elec <- vic_elec %>% 
+  clean_names()
+```
+
+```{r}
+index(vic_elec)
+index_var(vic_elec)
+
+key(vic_elec)
+key_vars(vic_elec)
+
+interval(vic_elec)
+```
+
+```{r}
+vic_elec %>% 
+  select(demand, temperature)
+```
+
+
+```{r}
+vic_elec %>% 
+  filter(holiday)
+```
+
+
+```{r}
+vic_elec %>% 
+  filter(!holiday)
+```
+
+
+```{r}
+vic_elec %>% 
+  filter(time < "2012-01-01 01:00:00")
+```
+
+
+We need to change the timezone to match Australia/Melbourne timezone
+
+```{r}
+vic_elec %>% 
+  filter(time < as.POSIXct("2012-01-01 01:00:00", tz = "Australia/Melbourne"))
+```
+
+
+```{r}
+vic_elec %>% 
+  filter(time < as.Date("2012-01-02"))
+```
+
+
+```{r}
+vic_elec %>% 
+  filter_index("2012-01")
+```
+
+
+
+```{r}
+vic_elec <- vic_elec %>% 
+  mutate(year = lubridate::year(date))
+```
+
+> THIS WON'T WORK !!!!!!!!!!!!!!!!!!! <
+
+```{r}
+vic_elec %>% 
+  select(year, temperature) %>% 
+  group_by(year) %>% 
+  summarise(mean_temp = mean(temperature))
+```
+
+
+> THIS WILL WORK !!!!!!!!!!!!!!!!!!!! <
+> This will calculate a mean temperature for each day 
+
+This will convert all time stamps into single days
+Index by then works like grouping
+```{r}
+vic_elec %>% 
+  index_by(as_date(time)) %>% 
+  summarise(mean_temp = mean(temperature))
+```
+
+> Use the below method to calculate the mean temperature for each year
+
+```{r}
+vic_elec %>% 
+  select(year, temperature) %>% 
+  index_by(year) %>% 
+  summarise(mean_temp = mean(temperature))
+```
+
+
+
+## `tsibble` and `ggplot2`
+
+```{r}
+vic_elec %>% 
+  filter(!holiday) %>% 
+  ggplot(aes(x = time,
+             y = temperature)) +
+  geom_line()
+```
+
+
+Other lubridate funcitons
+`floor_date()`
+`ceiling_date()`
+`yearweek()`
+`yearmonth()`
+`yearquarter()`
+
+
+```{r}
+elec_date <- vic_elec %>% 
+  index_by(date = as_date(time)) %>% 
+  summarise(temp_mean = mean(temperature))
+
+elec_date %>% 
+  ggplot(aes(x = date,
+             y = temp_mean)) +
+  geom_line()
+```
+
+
+```{r}
+elec_month <- vic_elec %>% 
+  index_by(month = month(time, label = TRUE)) %>% 
+  summarise(temp_mean = mean(temperature, na.rm = TRUE))
+
+elec_month %>% 
+  ggplot(aes(x = month,
+             y = temp_mean)) +
+  geom_point() +
+  geom_line(group = 1)
+```
+
+
+```{r}
+elec_year <- vic_elec %>%
+  index_by(year = year(time)) %>%
+  summarise(temp_mean = mean(temperature, na.rm = TRUE))
+
+elec_year %>% 
+  ggplot(aes(x = year, y = temp_mean)) +
+  geom_col(fill = "steelblue") + 
+  ylab("Mean Temperature")+ 
+  xlab("year")
+```
+
+
+## Rolling windows
+
+```{r}
+library(slider)
+library(feasts)
+```
+
+
+```{r}
+elec_rolling <- vic_elec %>% 
+  mutate(
+    temp_moving_avg_1 = slide_dbl(
+      .x = temperature,
+      .f = ~ mean(.x, na.rm = TRUE),
+      .before = 2400,
+      .after = 2400,
+      complete = TRUE
+    ),
+   temp_moving_avg_2 = slide_dbl(
+      .x = temperature,
+      .f = ~ mean(.x, na.rm = TRUE),
+      .before = 240,
+      .after = 240,
+      complete = TRUE),
+   temp_moving_avg_3 = slide_dbl(
+      .x = temperature,
+      .f = ~ mean(.x, na.rm = TRUE),
+      .before = 4800,
+      .after = 4800,
+      complete = TRUE)
+  )
+```
+
+
+```{r}
+elec_rolling %>% 
+  ggplot() +
+  geom_line(aes(x = date,
+             y = temperature),
+            colour = "grey") +
+  geom_line(aes(x = date,
+             y = temp_moving_avg_1),
+            colour = "red") +
+  geom_line(aes(x = date,
+             y = temp_moving_avg_2),
+            colour = "blue") +
+  geom_line(aes(x = date,
+             y = temp_moving_avg_3),
+            colour = "cyan")
+```
+
+
+## `feasts`
+
+```{r}
+tourism
+
+index_var(tourism)
+
+key_vars(tourism)
+
+tourism %>% 
+  distinct(Purpose)
+
+tourism %>% 
+  distinct(State)
+
+tourism %>% 
+  distinct(Region)
+```
+
+
+```{r}
+holidays <- tourism %>% 
+  filter(Purpose %in% c("Holiday", "Business")) %>% 
+  group_by(State) %>% 
+  summarise(trips = sum(Trips))
+
+
+holidays %>% 
+  autoplot(trips) +
+  xlab("Year")
+```
+
+
+```{r}
+holidays %>% 
+  filter(State %in% c("Queensland", "New South Wales", "Victoria")) %>% 
+  gg_season(trips)
+```
+
+
+```{r}
+holidays %>% 
+  filter(State %in% c("Queensland", "New South Wales", "Victoria")) %>% 
+  gg_subseries(trips)
+```
+
+
+
+
+
+
+
+
+
+
+
+
