@@ -1,0 +1,439 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+Geospatail Data
+
+`{sf}`
+Simple features
+- Each row is called a _feature_
+
+```{r}
+library(sf)
+library(rnaturalearth)
+library(leaflet)
+```
+
+
+
+```{r}
+
+# st stands for spatial temporal
+north_carolina <- st_read(system.file("shape/nc.shp", package = "sf"))
+
+plot(north_carolina['AREA'])
+```
+
+Geometry type: MULTIPOLYGON
+Bounding box:  xmin: -84.32385 ymin: 33.88199 xmax: -75.45698 ymax: 36.58965
+Geodetic CRS:  NAD27
+
+```{r}
+north_carolina %>% 
+  names()
+```
+
+```{r}
+nc_geo <- st_geometry(north_carolina)
+
+nc_geo[[1]]
+```
+
+INSTRUCTION   ((co-ordinates))
+MULTIPOLYGON (((-81.47276 36.23436, -81.54084 36.27251, -81.56198 36.27359, -81.63306 36.34069, -81.74107 36.39178, -81.69828 36.47178, -81.7028 36.51934, -81.67 36.58965, -81.3453 36.57286, -81.34754 36.53791, -81.32478 36.51368, -81.31332 36.4807, -81.26624 36.43721, -81.26284 36.40504, -81.24069 36.37942, -81.23989 36.36536, -81.26424 36.35241, -81.32899 36.3635, -81.36137 36.35316, -81.36569 36.33905, -81.35413 36.29972, -81.36745 36.2787, -81.40639 36.28505, -81.41233 36.26729, -81.43104 36.26072, -81.45289 36.23959, -81.47276 36.23436)))
+
+The "big-seven" shapes that a feature can be:
+
+> 1. POINT       (1 1)
+> 2. MULTIPOINT ((1 1), (2 2))
+> 3. LINESTRING ((1 1, 1 2))
+> 4. MULTILINE  ((1 1, 1 2) (2 2, 3 3))
+> 5. POLYGON     (1 1, 1 2, 2 2, 2 1, 1 1) #This must be a closed shape, ie opening & closing must be equal
+> 6. MULTIPOLYGON 
+> 7. GEOMETRY COLLECTION (POINT (1 1), MULTILINE ((1 2, 1 2), (2 2, 3 3)))
+     geometry collection can be made up of multiple shape instructions, and any number of them,
+     just not a geometry collection
+     
+Shetland would be a MULTIPOLYGON made up of several island polygons
+
+How to plot individual geometires
+```{r}
+plot(nc_geo[[1]])
+```
+
+
+`{sf}` and `ggplot2`
+- with a new geom `geom_sf`
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+ggplot(north_carolina) +
+  geom_sf(aes(fill = AREA), size = 0.25, colour = "black") +
+  theme_bw()
+```
+
+
+```{r}
+ggplot(north_carolina) +
+  geom_sf(aes(fill = NWBIR79), size = 0.25, colour = "black") +
+  theme_void() +
+  scale_fill_distiller(palette = "Reds", direction = 1)
+```
+
+How to plot and show the biggest area
+```{r}
+ggplot(north_carolina) +
+  geom_sf(fill = "white", colour = "black") +
+  geom_sf(data = north_carolina %>% filter(AREA == max(AREA)), fill = "red")
+```
+
+
+How to convert sf to a df
+
+tsibble --> as_tibble        --> tibble
+sf df   --> st_drop_geometry --> df(tibble)
+
+```{r}
+north_carolina %>% 
+  st_drop_geometry()
+```
+
+
+
+## Subsetting Simple Features
+
+```{r}
+library(rnaturalearth)
+library(rnaturalearthdata)
+```
+
+```{r}
+world <- ne_countries(scale = "medium", returnclass = "sf")
+```
+
+```{r}
+names(world)
+```
+
+```{r}
+world %>% 
+  st_drop_geometry() %>% 
+  head()
+```
+
+
+```{r}
+world %>% 
+  ggplot() +
+  geom_sf(aes(fill = pop_est), size = 0.1) +
+  scale_fill_viridis_c(trans = "sqrt")
+```
+
+We can apply a transformation -- trans = "sqrt"
+
+India and China are still the most populated countries, but we can reduce how much they are populated by taking the square root of each country
+
+
+```{r}
+world %>% 
+  ggplot() +
+  geom_sf(aes(fill = pop_est), size = 0.1) +
+  scale_fill_distiller(palette = "Reds", direction = 1, trans = "sqrt")
+```
+
+
+```{r}
+world %>% 
+  ggplot() +
+  geom_sf(aes(fill = pop_est), size = 0.1) +
+  scale_fill_distiller(palette = "Reds", direction = 1, trans = "log")
+```
+
+
+```{r}
+pop_estimates <- world$pop_est
+```
+
+```{r}
+hist(log10(pop_estimates))
+```
+
+
+```{r}
+world %>% 
+  ggplot() + 
+  geom_sf(aes(fill = gdp_md_est), size = 0.1) +
+  scale_fill_distiller(palette = "Greens", trans = "sqrt", direction = 1) +
+  ggtitle("GDP Estimate per country") +
+  theme_void()
+```
+
+
+```{r}
+world %>% 
+  ggplot() + 
+  geom_sf(aes(fill = economy), size = 0.1) +
+  scale_fill_brewer(palette = "Dark2") +
+  ggtitle("Economic Rating") +
+  theme_void()
+```
+
+
+Picking out individual countries
+
+Filter as we would a tibble ---> plot
+```{r}
+world %>% 
+  filter(name == "Italy") %>% 
+  ggplot() +
+  geom_sf()
+```
+
+
+Zooming in on particular areas
+Zoom in on Gulf of Mexico
+```{r}
+world %>% 
+  ggplot() + 
+  geom_sf(aes(fill = economy), size = 0.1) +
+  coord_sf(xlim = c(-102.15, -74.12), ylim = c(7.65, 33.9)) +
+  scale_fill_brewer(palette = "Dark2") +
+  ggtitle("Economic Rating") +
+  theme_bw() +
+  theme(
+    legend.position = "bottom"
+  )
+```
+
+By default coord sf will give a slightly larger box than requested, you can turn off this behaviour off with expand = FALSE
+
+
+Adding locaiton labels using
+`geom_sf_label` and `geom_sf_text`
+```{r}
+world %>% 
+  ggplot() + 
+  geom_sf(aes(fill = economy), size = 0.1) +
+  coord_sf(xlim = c(-102.15, -74.12), ylim = c(7.65, 33.9)) +
+  geom_sf_text(aes(label = name), size = 2, check_overlap = TRUE) +
+  scale_fill_brewer(palette = "Dark2") +
+  ggtitle("Economic Rating") +
+  theme_void() +
+  theme(
+    legend.position = "bottom"
+  )
+```
+
+
+```{r}
+world %>% 
+  ggplot() + 
+  geom_sf(aes(fill = economy), size = 0.1) +
+  coord_sf(xlim = c(-23.9, 39.4), ylim = c(35.3, 66.1)) +
+  geom_sf_text(aes(label = name), size = 2, check_overlap = TRUE) +
+  scale_fill_brewer(palette = "Dark2") +
+  ggtitle("Economic Rating") +
+  theme_void() +
+  theme(
+    legend.position = "bottom"
+  )
+```
+
+
+```{r}
+new_york <- st_read("Borough Boundaries/geo_export_65591d40-c666-4edd-8fcf-edad85e52039.shp")
+```
+
+
+```{r}
+new_york %>% 
+  ggplot() +
+  geom_sf()
+```
+
+
+Creating Interactive Geospatial Data Visulasations 
+
+`{leaflet}`
+
+```{r}
+library(leaflet)
+```
+
+```{r}
+leaflet() %>% 
+  addTiles() %>% 
+  addMarkers(
+    lng = 174.768,
+    lat = -36.852,
+    popup = "Birthplace of R"
+  )
+```
+
+
+circle markers
+
+```{r}
+library(jsonlite)
+
+data_url <- "https://data.colorado.gov/resource/j5pc-4t32.json?&county=BOULDER"
+
+water_data <- fromJSON(data_url) %>% 
+  jsonlite::flatten(recursive = TRUE)
+```
+
+Data wrangling
+
+amount, latitude and longitude are not numeric data types
+
+```{r}
+water_data_clean <- water_data %>% 
+  mutate(across(
+    c(amount, location.latitude, location.longitude),
+    as.numeric
+  )) %>% 
+  filter(!is.na(location.latitude))
+```
+
+
+```{r}
+leaflet(water_data_clean) %>% 
+  addTiles() %>% 
+  addCircles(
+    lng = ~location.longitude,
+    lat = ~location.latitude,
+    # make the size depend on the amount of water at that location
+    radius = ~(amount/10),
+    # create data dependent popups
+    popup = ~paste("water", amount, sep = " ")
+  )
+```
+
+
+## Clustering
+```{r}
+leaflet(water_data_clean) %>% 
+  addTiles() %>% 
+  addMarkers(
+    lng = ~location.longitude,
+    lat = ~location.latitude,
+    # create data dependent popups
+    popup = ~paste("water", amount, sep = " "),
+    clusterOptions = markerClusterOptions()
+  )
+```
+
+
+## Simplifying Shapes
+
+```{r}
+plot(nc_geo[[4]])
+```
+
+
+```{r}
+plot(st_simplify(nc_geo, dTolerance = 2500)[[4]])
+```
+- Increasing the tolerance will decrease the number of points to express in the polygon
+- This reduces computational runtime - important in shiny apps
+
+```{r}
+north_carolina %>% 
+  st_simplify(dTolerance = 2000) %>% 
+  ggplot() +
+  geom_sf() +
+  theme_void()
+```
+
+
+## Reading/writing shapefiles
+
+```{r}
+north_carolina %>% 
+  st_simplify(dTolerance = 2000) %>% 
+  st_write(dsn = "nc_simplified", layer = "simple_north_carolina", driver = "ESRI Shapefile")
+```
+
+Shapefiles --> {
+- .shp
+- .shx
+- .prj
+- .dbf
+}
+
+```{r}
+simple_north_carolina <- st_read(dsn = "nc_simplified/",
+                                 layer = "simple_north_carolina")
+```
+
+
+## Leaflet Polygons
+
+```{r}
+pal <- colorBin("Reds", simple_north_carolina$NWBIR74, n = 9)
+
+labels <- paste(
+  "<b>", simple_north_carolina$NAME, "</b>", "<br>",
+  simple_north_carolina$NWBIR74
+) %>% lapply(htmltools::HTML)
+
+leaflet(simple_north_carolina) %>% 
+  addTiles() %>% 
+  addPolygons(weight = 1, color = "black",
+              fillColor = ~pal(NWBIR74), fillOpacity = 100,
+              label = labels) %>% 
+  addLegend(
+    pal = pal,
+    values = ~NWBIR74,
+    position = "bottomright")
+```
+
+
+data %>% 
+  1. transform()
+  leaflet() %>% 
+  addTiles() %>% 
+  addPolygons()
+
+
+## Leaflet in Shiny
+
+- whisky distillery map
+
+```{r}
+# test input
+input <- list(
+  region = "Speyside"
+)
+
+whisky_data %>% 
+      filter(Region == input$region) %>% 
+      leaflet() %>% 
+      addTiles() %>% 
+      addCircleMarkers(
+        lat = ~Latitude,
+        lng = ~Longitude,
+        popup = ~Distillery,
+        clusterOptions = markerClusterOptions()
+      )
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
