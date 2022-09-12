@@ -1,0 +1,718 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+library(tidyverse)
+library(janitor)
+```
+
+
+```{r}
+mtcars %>% 
+  select(wt, mpg) %>% 
+  glimpse()
+```
+
+
+```{r}
+mtcars %>% 
+  ggplot(aes(x = wt,
+             y = mpg))+
+  geom_point()
+```
+
+Same as above but add centroid
+
+```{r}
+mtcars %>% 
+  ggplot(aes(x = wt,
+             y = mpg))+
+  geom_point()+
+  geom_point(aes(x = mean(wt),
+                 y = mean(mpg)),
+             colour = "red", size = 3)
+```
+
+
+```{r}
+noisy_bivariate <- function(noise = 1, gradient = 1){
+  x <- runif(n = 200, min = 0, max = 10)
+  y <- gradient * x + 10
+  y_scatter <- noise * 4 * rnorm(n = 200)
+  y <- y + y_scatter
+  data = tibble(x, y)
+
+  r <- round(cor(x, y), 4)
+  title <- paste(
+    "noise = ", noise,
+    ", gradient = ", gradient,
+    ", r = ", r
+  )
+  
+  data %>%
+    ggplot(aes(x = x, y = y)) +
+    geom_point() +
+    xlim(0, 10) +
+    ylim(min(c(min(y), 0)), max(c(max(y), 10))) +
+    ggtitle(title)
+  
+}
+noisy_bivariate(noise = 0.1, gradient = 0)
+```
+
+
+```{r}
+noisy_bivariate <- function(noise = 1, gradient = 1){
+  x <- runif(n = 200, min = 0, max = 10)
+  y <- gradient * x + 10
+  y_scatter <- noise * 4 * rnorm(n = 200)
+  y <- y + y_scatter
+  data = tibble(x, y)
+
+  r <- round(cor(x, y), 4)
+  title <- paste(
+    "noise = ", noise,
+    ", gradient = ", gradient,
+    ", r = ", r
+  )
+  
+  data %>%
+    ggplot(aes(x = x, y = y)) +
+    geom_point() +
+    xlim(0, 10) +
+    ylim(min(c(min(y), 0)), max(c(max(y), 10))) +
+    ggtitle(title)
+  
+}
+noisy_bivariate(noise = 0, gradient = 1)
+```
+
+
+```{r}
+noisy_bivariate <- function(noise = 1, gradient = 1){
+  x <- runif(n = 200, min = 0, max = 10)
+  y <- gradient * x + 10
+  y_scatter <- noise * 4 * rnorm(n = 200)
+  y <- y + y_scatter
+  data = tibble(x, y)
+
+  r <- round(cor(x, y), 4)
+  title <- paste(
+    "noise = ", noise,
+    ", gradient = ", gradient,
+    ", r = ", r
+  )
+  
+  data %>%
+    ggplot(aes(x = x, y = y)) +
+    geom_point() +
+    xlim(0, 10) +
+    ylim(min(c(min(y), 0)), max(c(max(y), 10))) +
+    ggtitle(title)
+  
+}
+noisy_bivariate(noise = 0, gradient = 0.2)
+```
+
+
+```{r}
+noisy_bivariate <- function(noise = 1, gradient = 1){
+  x <- runif(n = 200, min = 0, max = 10)
+  y <- gradient * x + 10
+  y_scatter <- noise * 4 * rnorm(n = 200)
+  y <- y + y_scatter
+  data = tibble(x, y)
+
+  r <- round(cor(x, y), 4)
+  title <- paste(
+    "noise = ", noise,
+    ", gradient = ", gradient,
+    ", r = ", r
+  )
+  
+  data %>%
+    ggplot(aes(x = x, y = y)) +
+    geom_point() +
+    xlim(0, 10) +
+    ylim(min(c(min(y), 0)), max(c(max(y), 10))) +
+    ggtitle(title)
+  
+}
+noisy_bivariate(noise = 0.3, gradient = 0.2)
+```
+
+
+```{r}
+noisy_bivariate <- function(noise = 1, gradient = 1){
+  x <- runif(n = 200, min = 0, max = 10)
+  y <- gradient * x + 10
+  y_scatter <- noise * 4 * rnorm(n = 200)
+  y <- y + y_scatter
+  data = tibble(x, y)
+
+  r <- round(cor(x, y), 4)
+  title <- paste(
+    "noise = ", noise,
+    ", gradient = ", gradient,
+    ", r = ", r
+  )
+  
+  data %>%
+    ggplot(aes(x = x, y = y)) +
+    geom_point() +
+    xlim(0, 10) +
+    ylim(min(c(min(y), 0)), max(c(max(y), 10))) +
+    ggtitle(title)
+  
+}
+noisy_bivariate(noise = 0.3, gradient = 1)
+```
+
+
+```{r}
+noisy_bivariate <- function(noise = 1, gradient = 1){
+  x <- runif(n = 200, min = 0, max = 10)
+  y <- gradient * x + 10
+  y_scatter <- noise * 4 * rnorm(n = 200)
+  y <- y + y_scatter
+  data = tibble(x, y)
+
+  r <- round(cor(x, y), 4)
+  title <- paste(
+    "noise = ", noise,
+    ", gradient = ", gradient,
+    ", r = ", r
+  )
+  
+  data %>%
+    ggplot(aes(x = x, y = y)) +
+    geom_point() +
+    xlim(0, 10) +
+    ylim(min(c(min(y), 0)), max(c(max(y), 10))) +
+    ggtitle(title)
+  
+}
+noisy_bivariate(noise = 1, gradient = 1)
+```
+
+
+```{r}
+noisy_bivariate <- function(noise = 1, gradient = 1){
+  x <- runif(n = 200, min = 0, max = 10)
+  y <- gradient * x + 10
+  y_scatter <- noise * 4 * rnorm(n = 200)
+  y <- y + y_scatter
+  data = tibble(x, y)
+
+  r <- round(cor(x, y), 4)
+  title <- paste(
+    "noise = ", noise,
+    ", gradient = ", gradient,
+    ", r = ", r
+  )
+  
+  data %>%
+    ggplot(aes(x = x, y = y)) +
+    geom_point() +
+    xlim(0, 10) +
+    ylim(min(c(min(y), 0)), max(c(max(y), 10))) +
+    ggtitle(title)
+  
+}
+noisy_bivariate(noise = 1, gradient = 0)
+```
+
+
+```{r}
+noisy_bivariate <- function(noise = 1, gradient = 1){
+  x <- runif(n = 200, min = 0, max = 10)
+  y <- gradient * x + 10
+  y_scatter <- noise * 4 * rnorm(n = 200)
+  y <- y + y_scatter
+  data = tibble(x, y)
+
+  r <- round(cor(x, y), 4)
+  title <- paste(
+    "noise = ", noise,
+    ", gradient = ", gradient,
+    ", r = ", r
+  )
+  
+  data %>%
+    ggplot(aes(x = x, y = y)) +
+    geom_point() +
+    xlim(0, 10) +
+    ylim(min(c(min(y), 0)), max(c(max(y), 10))) +
+    ggtitle(title)
+  
+}
+noisy_bivariate(noise = 0, gradient = -1)
+```
+
+
+```{r}
+noisy_bivariate <- function(noise = 1, gradient = 1){
+  x <- runif(n = 200, min = 0, max = 10)
+  y <- gradient * x + 10
+  y_scatter <- noise * 4 * rnorm(n = 200)
+  y <- y + y_scatter
+  data = tibble(x, y)
+
+  r <- round(cor(x, y), 4)
+  title <- paste(
+    "noise = ", noise,
+    ", gradient = ", gradient,
+    ", r = ", r
+  )
+  
+  data %>%
+    ggplot(aes(x = x, y = y)) +
+    geom_point() +
+    xlim(0, 10) +
+    ylim(min(c(min(y), 0)), max(c(max(y), 10))) +
+    ggtitle(title)
+  
+}
+noisy_bivariate(noise = 0.3, gradient = -1)
+```
+
+
+```{r}
+noisy_bivariate <- function(noise = 1, gradient = 1){
+  x <- runif(n = 200, min = 0, max = 10)
+  y <- gradient * x + 10
+  y_scatter <- noise * 4 * rnorm(n = 200)
+  y <- y + y_scatter
+  data = tibble(x, y)
+
+  r <- round(cor(x, y), 4)
+  title <- paste(
+    "noise = ", noise,
+    ", gradient = ", gradient,
+    ", r = ", r
+  )
+  
+  data %>%
+    ggplot(aes(x = x, y = y)) +
+    geom_point() +
+    xlim(0, 10) +
+    ylim(min(c(min(y), 0)), max(c(max(y), 10))) +
+    ggtitle(title)
+  
+}
+noisy_bivariate(noise = -1, gradient = -1)
+```
+
+
+```{r}
+# Pivot longer:
+anscombe_long <- anscombe %>%
+pivot_longer(everything(),
+names_to = c(".value", "set"),
+names_pattern = c("(\\D+)(\\d+)"))
+
+# Group by set and get the correlation coefficient for each:
+anscombe_long %>%
+group_by(set) %>%
+summarise(r = cor(x, y))
+
+# Plot the quartet:
+anscombe_long %>%
+ggplot() +
+aes(x = x, y = y) +
+geom_point() +
+facet_wrap(~set)
+```
+
+
+```{r}
+summarise(anscombe, cor(x1, y1))
+```
+
+
+```{r}
+tibble_states <- clean_names(as_tibble(state.x77))
+```
+
+
+```{r}
+tibble_states %>% 
+  ggplot(aes(x = population,
+             y = income))+
+  geom_point()
+```
+
+
+```{r}
+tibble_states %>% 
+  summarise(cor(population, income))
+```
+
+
+```{r}
+tibble_states %>% 
+  ggplot(aes(x = income,
+             y = illiteracy))+
+  geom_point()
+```
+
+
+```{r}
+tibble_states %>% 
+  summarise(cor(income, illiteracy))
+```
+
+
+```{r}
+tibble_states %>% 
+  ggplot(aes(x = income,
+             y = life_exp))+
+  geom_point()
+```
+
+
+```{r}
+tibble_states %>% 
+  summarise(cor(income, life_exp))
+```
+
+
+```{r}
+tibble_states %>% 
+  ggplot(aes(x = income,
+             y = hs_grad))+
+  geom_point()
+```
+
+
+```{r}
+tibble_states %>% 
+  summarise(cor(income, hs_grad))
+```
+
+
+```{r}
+tibble_states %>% 
+  ggplot(aes(x = population,
+             y = area))+
+  geom_point()
+```
+
+
+```{r}
+tibble_states %>% 
+  summarise(cor(population, area))
+```
+
+
+```{r}
+tibble_states %>% 
+  ggplot(aes(x = illiteracy,
+             y = murder))+
+  geom_point()
+```
+
+
+```{r}
+tibble_states %>% 
+  summarise(cor(illiteracy, murder))
+```
+
+
+```{r}
+tibble_states %>% 
+  ggplot(aes(x = hs_grad,
+             y = illiteracy))+
+  geom_point()
+```
+
+
+```{r}
+tibble_states %>% 
+  summarise(cor(hs_grad, illiteracy))
+```
+Straight Lines
+
+```{r}
+line <- function(x, a, b){
+  return(a * x + b)
+}
+
+data <- tibble(
+  x = seq(-5, 5, 0.1),
+  y = line(x, a = 2, b = -1)
+)
+
+data %>% 
+  ggplot(aes(x,y))+
+  geom_line(colour= "firebrick")+
+  geom_vline(xintercept = 0)+
+  geom_hline(yintercept = 0)
+```
+
+
+```{r}
+line <- function(x, a, b){
+  return(a * x + b)
+}
+
+data <- tibble(
+  x = seq(-5, 5, 0.1),
+  y = line(x, a = 4, b = -3)
+)
+
+data %>% 
+  ggplot(aes(x,y))+
+  geom_line(colour= "firebrick")+
+  geom_vline(xintercept = 0)+
+  geom_hline(yintercept = 0)
+```
+
+
+```{r}
+line <- function(x, a, b){
+  return(a * x + b)
+}
+
+data <- tibble(
+  x = seq(-5, 5, 0.1),
+  y = line(x, a = -3, b = 5)
+)
+
+data %>% 
+  ggplot(aes(x,y))+
+  geom_line(colour= "firebrick")+
+  geom_vline(xintercept = 0)+
+  geom_hline(yintercept = 0)
+```
+
+
+```{r}
+line <- function(x, a, b){
+  return(a * x + b)
+}
+
+data <- tibble(
+  x = seq(-5, 5, 0.1),
+  y = line(x, a = 0, b = 10)
+)
+
+data %>% 
+  ggplot(aes(x,y))+
+  geom_line(colour= "firebrick")+
+  geom_vline(xintercept = 0)+
+  geom_hline(yintercept = 0)
+```
+
+
+```{r}
+line <- function(x, a, b){
+  return(a * x + b)
+}
+
+data <- tibble(
+  x = seq(-5, 5, 0.1),
+  y = line(x, a = 4, b = 2)
+)
+
+data %>% 
+  ggplot(aes(x,y))+
+  geom_line(colour= "firebrick")+
+  geom_vline(xintercept = 0)+
+  geom_hline(yintercept = 0)
+```
+
+
+```{r}
+noisy_line <- read_csv("data/noisy_line.csv")
+
+noisy_line_plot <- noisy_line %>%
+  ggplot(aes(x, y)) +
+  geom_point()
+noisy_line_plot
+```
+
+
+```{r}
+centroid <- noisy_line %>% 
+  summarise(x = mean(x),
+            y = mean(y))
+
+centroid
+```
+
+
+```{r}
+noisy_line_plot <- noisy_line %>%
+  ggplot(aes(x, y)) +
+  geom_point()+
+  geom_point(aes(x = centroid$x,
+                 y = centroid$y),
+             colour = "red", size = 3)
+noisy_line_plot
+```
+
+
+```{r}
+get_intercept <- function(slope, centroid_x, centroid_y){
+  return(centroid_y - slope * centroid_x)
+}
+```
+
+```{r}
+slope = 0.5
+noisy_line_plot +
+  geom_abline(slope = slope, intercept = get_intercept(slope, centroid$x, centroid$y))
+```
+
+
+```{r}
+slope = 2.2
+noisy_line_plot +
+  geom_abline(slope = slope, intercept = get_intercept(slope, centroid$x, centroid$y))
+```
+
+
+```{r}
+noisy_line_plot+
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+
+Simple Linear Regression
+
+```{r}
+height <- c(176, 164, 181, 168, 195, 185, 166, 180, 188, 174)
+weight <- c(82, 65, 85, 76, 90, 92, 68, 83, 94, 74 )
+```
+
+
+```{r}
+sample <- tibble(
+  weight,
+  height
+)
+```
+
+
+```{r}
+sample %>% 
+  ggplot(aes(x = weight,
+             y = height))+
+  geom_point()
+```
+
+
+```{r}
+line_regression <- function(x, b0, b1){
+  return(b0 + b1 *  x)
+}
+```
+
+
+```{r}
+b0 <- 95
+b1 <- 1
+
+sample <- sample %>% 
+  mutate(fitted_height = line_regression(x = weight,
+                                         b0 = b0,
+                                         b1 = b1))
+```
+
+
+```{r}
+sample %>% 
+  ggplot(aes(x = weight,
+             y = height))+
+  geom_point()+
+  geom_point(aes(y = fitted_height), shape = 1)+
+  geom_abline(slope = b1, intercept = b0, col = "red")+
+  geom_segment(aes(xend = weight, yend = fitted_height),
+               alpha = 0.5)
+```
+
+
+```{r}
+sample <- sample %>% 
+  mutate(residual = height - fitted_height)
+
+sample
+```
+
+
+```{r}
+sample %>% 
+  summarise(sum_residuals = sum(residual))
+```
+
+
+```{r}
+sample <- sample %>% 
+  mutate(sq_resid = residual ^ 2)
+```
+
+
+```{r}
+sample %>% 
+  summarise(sum_sq_resid = sum(sq_resid))
+```
+
+
+```{r}
+model <- lm(formula = height ~ weight,
+            data = sample)
+```
+
+
+```{r}
+fitted(model)
+```
+
+
+```{r}
+model %>% 
+  predict(newdata = data.frame(weight = c(78)))
+```
+
+
+```{r}
+library(modelr)
+```
+
+
+```{r}
+sample <- sample %>% 
+  select(-c(fitted_height, residual, sq_resid)) %>% 
+  add_predictions(model) %>% 
+  add_residuals(model)
+```
+
+
+```{r}
+sample %>% 
+  ggplot(aes(x = weight))+
+  geom_point(aes(y = height))+
+  geom_line(aes(y = pred), col = "red")
+```
+
+
+```{r}
+weights_predict <- tibble(
+  weight = 50:120
+)
+
+weights_predict %>% 
+  add_predictions(model)
+```
+
+
+
+
+
+
+
+

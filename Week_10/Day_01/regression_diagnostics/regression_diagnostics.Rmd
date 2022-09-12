@@ -1,0 +1,172 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+library(tidyverse)
+library(modelr)
+library(janitor)
+```
+
+
+```{r}
+height <- c(176, 164, 181, 168, 195, 185, 166, 180, 188, 174)
+weight <- c(82, 65, 85, 76, 90, 92, 68, 83, 94, 74 )
+sample <- tibble(
+  weight,
+  height
+)
+```
+
+
+```{r}
+model <- lm(height ~ weight,
+            data = sample)
+```
+
+
+```{r}
+summary(model)
+```
+
+
+```{r}
+library(broom)
+```
+
+To get the `coefficients` section from the `summary` above
+```{r}
+model %>% tidy()
+```
+
+
+```{r}
+glance_output <- model %>% 
+  glance() %>% 
+  janitor::clean_names()
+
+glance_output
+```
+
+
+```{r}
+tidy_output <- model %>% 
+  tidy() %>% 
+  clean_names()
+
+tidy_output
+```
+
+
+```{r}
+glance_output$r_squared
+```
+
+
+
+```{r}
+sample %>% 
+  summarise(r_squared = cor(weight, height) ^ 2)
+```
+
+
+```{r}
+library(ggfortify)
+autoplot(model)
+```
+
+```{r}
+sample %>% 
+  add_residuals(model) %>% 
+  ggplot(aes(x = resid))+
+  geom_histogram(binwidth = 2,
+                 col = "white")
+```
+
+
+
+```{r}
+dist_1 <- read_csv("data/distribution_1.csv")
+
+dist_2 <- read_csv("data/distribution_2.csv")
+```
+
+
+```{r}
+model_1 <- lm(y ~ x,
+              dist_1)
+```
+
+
+```{r}
+model_2 <- lm(y ~ x,
+              dist_2)
+```
+
+
+```{r}
+autoplot(model_1)
+```
+
+
+```{r}
+autoplot(model_2)
+```
+
+
+```{r}
+dist_1 %>% 
+  add_predictions(model = model_1) %>% 
+  ggplot(aes(x = x))+
+  geom_point(aes(y = y))+
+  geom_line(aes(y = pred), col = "red")
+```
+
+
+```{r}
+dist_2 %>% 
+  add_predictions(model = model_2) %>% 
+  ggplot(aes(x = x))+
+  geom_point(aes(y = y))+
+  geom_line(aes(y = pred), col = "red")
+```
+
+
+```{r}
+library(infer)
+```
+
+
+```{r}
+bootstrap_dist_slop <- dist_2 %>% 
+  specify(formula = y ~ x) %>% 
+  generate(reps = 10000, type = "bootstrap") %>% 
+  calculate(stat = "slope")
+
+slope_ci95 <- bootstrap_dist_slop %>% 
+  get_ci(level = 0.95, type = "percentile")
+
+slope_ci95
+```
+
+
+```{r}
+bootstrap_dist_slop %>% 
+  visualise(bins = 30) +
+  shade_ci(endpoints = slope_ci95)
+```
+
+
+```{r}
+model_2 %>% 
+  tidy(conf.int = TRUE, conf.level = 0.95) %>% 
+  clean_names()
+```
+
+
+
+
+
+
