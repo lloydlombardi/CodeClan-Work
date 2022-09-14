@@ -1,0 +1,359 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+library(tidyverse)
+library(car)
+library(modelr)
+library(skimr)
+library(GGally)
+library(ggfortify)
+```
+
+
+```{r}
+prestige <- Prestige
+```
+
+
+```{r}
+prestige %>% 
+  skim()
+```
+
+Drop NAs and remove 'census' variable
+
+```{r}
+prestige <- Prestige %>% 
+  drop_na() %>% 
+  select(-census)
+```
+
+
+Feature engineering / variable transformation
+
+* Logged some positively skewed numerics
+  + women
+  + income
+
+```{r}
+prestige_log <- prestige %>% 
+  mutate(ln_women = log(0.1 + women),
+         ln_income = log(income))
+
+skim(prestige_log)
+```
+
+
+```{r}
+prestige %>% 
+  select(prestige, everything()) %>% 
+  ggpairs(aes(colour = type,
+              alpha = 0.5))
+```
+
+
+```{r}
+prestige_log %>% 
+  select(prestige, everything()) %>% 
+  ggpairs(aes(colour = type,
+              alpha = 0.5))
+```
+
+* By looking at the logs we are accounting for the large outliers
+* This makes it look more like a normal distribution
+* Correlation also increases by 0.05
+* The scatter plot of ln_income is much more 'normal' than just income
+
+
+Investigate the large outliers for income:
+
+```{r}
+prestige %>% 
+  slice_max(income, n = 10)
+```
+
+
+Start building our model:
+
+Best predictor first
+
+```{r}
+mod1a <- lm(prestige ~ education,
+            data = prestige)
+
+summary(mod1a)
+```
+
+For every unit increase in education, prestige increases 5.3 if all other variables are held constant.
+Education can explain 75% of variation in prestige
+
+```{r}
+autoplot(mod1a)
+```
+
+All plots look good - we could accept these
+
+
+```{r}
+mod1b <- lm(prestige ~ type,
+            data = prestige)
+
+summary(mod1b)
+```
+
+* Blue-collar: 35.5
+* White-collar: 42.2
+* Professional: 74.5
+* RSE slightly higher (9.5)
+* $r^2$ slightly lower (0.7) 
+
+
+```{r}
+autoplot(mod1b)
+```
+
+Although both models look good, mod1a is better (based on r^2 and RSE), so we would choose 'education' as our first predictor
+
+
+now we want to see which variables describe the 'residue' - the unexplained model error
+
+change the variable of interest
+
+```{r}
+prestige_resid <- prestige_log %>% 
+  add_residuals(mod1a) %>% 
+  select(-c(prestige, education))
+
+prestige_resid %>% 
+  select(resid, everything()) %>% 
+  ggpairs(aes(colour = type,
+              alpha = 0.5))
+```
+
+things to model next based on this:
+
+* ln_income
+* income
+* type
+
+add second predictor - the one that explains the most residual error
+
+```{r}
+mod2a<- lm(prestige ~ education + ln_income,
+           data = prestige_log)
+
+summary(mod2a)
+
+autoplot(mod2a)
+```
+
+* $r^2$ is up to 83.4
+* RSE is down to 6.9
+* education coefficient is reduced to 4 (from 5.3)
+* can't really compare these coefficients as education is measured in years and ln_income is a log of dollars 
+
+
+```{r}
+mod2b<- lm(prestige ~ education + income,
+           data = prestige_log)
+
+summary(mod2b)
+
+autoplot(mod2b)
+```
+
+* less predictive of a model
+* education coefficent less effected
+* $r^2$ less
+* RES higher
+
+We can **reject** this model in favour of **mod2a**
+
+
+```{r}
+mod2c<- lm(prestige ~ education + type,
+           data = prestige_log)
+
+summary(mod2c)
+
+autoplot(mod2c)
+```
+
+* type labels explain **less** when education is controlled
+* $r^2$ is down
+* RSE is higher
+
+when 'type' categories have different levels of significance, either use **all** or **none** of them - **DON"T CHERRY PICK**
+
+We can **reject** this model in favour of **mod2a**
+
+Results:
+
+* **mod2a** gave biggest uplift in $r^2$
+* residuals look great
+
+
+check for significance of categorical: ANOVA test
+```{r}
+anova(mod1a, mod2c)
+```
+
+the means of the categorical levels are statistically different, therefore **all 3 levels** could be included
+
+
+third predictor
+
+```{r}
+prestige_resid <- prestige_log %>% 
+  add_residuals(mod2a) %>% 
+  select(-c(prestige, education, ln_income))
+
+prestige_resid %>% 
+  select(resid, everything()) %>%
+  ggpairs(aes(colour = type,
+              alpha = 0.5))
+```
+
+things to model next based on this:
+
+* type
+* women
+
+```{r}
+mod3a <- lm(prestige ~ education + ln_income + type,
+           data = prestige_log)
+
+summary(mod3a)
+
+autoplot(mod3a)
+```
+
+do an anova test on types
+
+```{r}
+anova(mod2a, mod3a)
+```
+
+the results are significant - we can include
+
+**add type to model**
+
+```{r}
+mod3b <- lm(prestige ~ education + ln_income + women,
+           data = prestige_log)
+
+summary(mod3b)
+
+autoplot(mod3b)
+
+```
+
+
+Interactions (between main effects)
+
+```{r}
+prestige_resid <- prestige_log %>% 
+  add_residuals(mod3a) %>% 
+  select(-prestige)
+```
+
+```{r}
+coplot(resid ~ ln_income | education,
+       panel = function(x, y, ...) {
+         points(x, y)
+         abline(lm(y ~ x), col = "blue")
+       },
+       data = prestige_resid,
+       rows = 1)
+```
+
+
+* over predicting at higher income
+* under predicting at lower income
+
+
+```{r}
+prestige_resid %>% 
+  ggplot(aes(x = education,
+             y = resid,
+             colour = type)) +
+  geom_point()+
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+* there is a difference in type levels
+* model could benefit from including this 
+
+
+```{r}
+prestige_resid %>% 
+  ggplot(aes(x = ln_income,
+             y = resid,
+             colour = type)) +
+  geom_point()+
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+* there is a difference in type levels
+* model could benefit from including this 
+
+Including the interactions
+
+```{r}
+mod4a <- lm(prestige ~ education + ln_income + type + education:ln_income,
+            data = prestige_log)
+
+summary(mod4a)
+```
+
+* education:ln_income is only a '.' significance
+  + maybe don't include
+
+
+```{r}
+mod4b <- lm(prestige ~ education + ln_income + type + education:type,
+            data = prestige_log)
+
+summary(mod4b)
+```
+
+
+
+```{r}
+mod4c <- lm(prestige ~ education + ln_income + type + type:ln_income,
+            data = prestige_log)
+
+summary(mod4c)
+```
+
+
+```{r}
+autoplot(mod4c)
+```
+
+
+```{r}
+anova(mod3a, mod4c)
+```
+
+
+Relative Importance
+
+```{r}
+library(relaimpo)
+
+calc.relimp(mod3a, type = "lmg", rela = TRUE)
+```
+
+
+```{r}
+calc.relimp(mod4c, type = "lmg", rela = TRUE)
+```
+
+
+
+
