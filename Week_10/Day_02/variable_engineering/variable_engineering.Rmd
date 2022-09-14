@@ -1,0 +1,281 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(mosaic)
+library(mosaicData)
+library(fastDummies)
+library(GGally)
+```
+
+
+```{r}
+library(datasauRus)
+```
+
+
+```{r}
+datasaurus_dozen %>% 
+  group_by(dataset) %>% 
+  summarize(mean_x = mean(x),
+            mean_y = mean(y),
+            std_dev_x = sd(x),
+            std_dev_y = sd(y),
+            correlation  = cor(x, y))
+```
+
+
+```{r}
+datasaurus_dozen %>% 
+ggplot(aes(x = x, y = y, colour = dataset))+
+  geom_point(size = 0.2)+
+  theme_void()+
+  theme(legend.position = "none")+
+  facet_wrap(~ dataset, ncol = 3)
+```
+
+
+### Missing Values
+
+- keep (may not be an option for some modelling)
+- drop
+- impute (replace with something meaningful)
+
+```{r}
+grades <- read_csv("data/grades.csv")
+```
+
+
+```{r}
+head(grades)
+```
+
+Is there a way we can model a student's final grade?
+
+y = final
+
+Find out what missing values there are
+```{r}
+summary(grades)
+```
+
+
+```{r}
+grades <- grades %>% 
+  mutate(take_home = coalesce(take_home, mean(take_home, na.rm = TRUE)),
+         final = coalesce(final, mean(final, na.rm = TRUE)))
+```
+
+Imputing missing values can be very valuable in modelling as it:
+
+* retains the information from other predictors
+* doesn't throw off the regression too much when using 'sensible' values
+
+
+### Dealing with outliers
+
+* don't be hasty to drop 'outliers'
+* be sure to justify the removal of any outliers
+* model it twice and report the difference when outliers are removed
+
+
+### Transformations
+
+When we've got very skewed data, one strategy is to transform the variable (usually using the variable itself)
+
+We can reduce the effect of skew by:
+
+* taking exponents (left-skew)
+* taking logarithms (right_skew)
+* taking square / sqrt
+
+A way to convert non-linear relationships into linear relationships
+
+Example
+
+gdp = -9 * population + 90
+with transformation:
+gdp = 2.3 * log(population) + 90
+
+
+### Categorical Data in a Model
+
+* convert into a wide format
+* each categorical level is a variable
+  + turns the categories into 'switches'
+  + if maths is 'switched on', what will the final grade be?
+  + if english is 'switched on', what will the final grade be?
+  + y = slope maths * maths + intercept 
+  + process is called: "Creating Dummy Variables"
+
+#### Create Dummy Variable long-form
+We wouldn't actually do this as we have packages
+```{r}
+grades_dummy <- grades %>% 
+  mutate(english = if_else(subject == "english", 1, 0),
+         physics = if_else(subject == "physics", 1, 0),
+         maths = if_else(subject == "maths", 1, 0),
+         french = if_else(subject == "french", 1, 0),
+         biology = if_else(subject == "biology", 1, 0)) %>% 
+  select(-subject)
+
+grades_dummy
+```
+
+If maths, physics, french and biology are 0, we know **english = 1**
+
+##### Dummy Variable Trap
+
+* we don't want to have the same information in our model twice
+* we are giving a variable that should have a weight of 1, a weight of 2
+* multicollinearity - having a copy of a variable in a model
+* we can avoid this by not having one of the variables present
+
+```{r}
+# remove biology to avoid multicollinearity
+grades_dummy <- grades %>% 
+  mutate(english = if_else(subject == "english", 1, 0),
+         physics = if_else(subject == "physics", 1, 0),
+         maths = if_else(subject == "maths", 1, 0),
+         french = if_else(subject == "french", 1, 0)) %>% 
+  select(-subject)
+
+grades_dummy
+```
+
+
+#### Real Dummy Variables
+
+1. R does dummies automatically when using lm() or gm()
+
+```{r}
+# proof that R calculates dummy variables before modelling
+lm(Sepal.Length ~ ., iris)
+```
+
+
+```{r}
+grades_dummies <- grades %>% 
+  dummy_cols(
+    select_columns = "subject",
+    remove_first_dummy = TRUE, # to avoid multicollinearity / dummy variable trap
+    remove_selected_columns = TRUE
+  )
+
+grades_dummies
+```
+
+
+We might want to group together low frequency categories
+
+```{r}
+grades %>% 
+  mutate(
+    subject = if_else(
+      subject %in% c("maths", "physics"), subject, "other"
+    )
+  )
+```
+
+
+### Binning
+Sometimes, it's useful to group together continuous predictors
+
+```{r}
+grades %>% 
+  distinct(midterm) %>% 
+  nrow()
+```
+
+--> create a grade category
+
+* > 70 = A
+* > 60 = B
+* > 50 = C
+
+```{r}
+grades %>% 
+  mutate(midterm_letter = case_when(
+    midterm >= 70 ~ "A",
+    midterm >= 60 ~ "B",
+    midterm >= 50 ~ "C",
+    TRUE ~ "F"
+  ), .after = midterm)
+```
+
+sometimes we want to reduce the **granularity**, in these cases we'd group observations into bins
+
+
+### Deriving Variables
+
+we call the initial data variables when we load them in: row variables 
+
+any columns we create are 'derived variables' - can be **super useful**
+
+Perhaps BMI is a better predictor of someone's health than either their height or weight
+
+
+### Scaling Variables
+
+Models don't care about units
+
+When we get very large values, 20000 vs 2, the model will care about the difference between these values. The model doesn't care about context, only the values.
+
+To bring our values onto a similar scale, we could scale them:
+
+* standardisation (follows standard normal distribution (mean 0, sd 1))
+* normalisation (follows normal distribution)
+
+This isn't particularly model-breaking for linear regression
+
+Our baseline
+our predictor is 0, this is our response
+
+When standardised
+our predictor is at its mean, this is our response
+
+```{r}
+library(ggfortify)
+model_baseline <- lm(final ~ .,
+                     data = grades)
+
+autoplot(model_baseline)
+
+grades_scaled <- grades %>% 
+  mutate(across(where(is.numeric), scale)) # how far away is it from a mean of 0 if everything is shifted
+
+model_scaled <- lm(final ~ .,
+                     data = grades_scaled)
+
+autoplot(model_scaled)
+```
+
+
+```{r}
+summary(model_baseline)
+summary(model_scaled)
+```
+
+The model hasn't really changed. Our interpretation has been shifted though.
+
+
+I want to make a model but...
+
+* My data has missing values 
+  + **might impute them**
+* My data has a couple of serious outliers 
+  + **we'd seriously justify dropping them**
+* My data is highly right-skewed 
+  + **we'd transform the variable using log for example**
+* My data is categorical 
+  + **we'd encode this using dummy variables**
+* My data has too many unique values 
+  + **we'd group them together in bins to reduce the granularity**
+* My data doesn't have the best predictors 
+  + **we'd derive better ones**
+* My data has variables that are measured in different units 
+  + **we'd consider scaling**
+

@@ -1,0 +1,490 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+## What's different
+
+Simple Linear Regression
+
+y = bx + c
+
+Multiple Linear Regression
+
+y = b1x1 + b2x2 + b3x3 + c
+
+* rather than explain the variation of y with one predictor (x), we're going to all for multiple predictors (X)
+
+
+## The Plan
+
+* understand the business question
+* build a simple linear model
+* add in another predictor
+  + categorical predictor (parallel slopes model)
+* add in a futher predictor
+  + continuous predictor
+* look at interactions
+
+### 1. The Data
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(mosaicData)
+```
+
+
+```{r}
+head(RailTrail)
+```
+
+
+```{r}
+rail_trail <- RailTrail
+```
+
+
+```{r}
+?RailTrail
+```
+
+
+Volume of Users of a Rail Trail
+
+We're going to build a model for `volume`.
+
+Can we explain the variation in `volume` using other predictors?
+
+Predictors:
+
+* temperature (Fahrenheit)
+* season
+* cloudcover (0 to 10)
+* precip (inches)
+* weekday 
+
+Issues with Data in Raw Form:
+
+* spring - fall are numbers rather than logical TRUE / FALSE
+* some collinear predictors (we want our predictors to be independent)  
+  + temps
+  + weekday/dayType
+  + season
+  
+#### Variable Engineering
+
+* drop collinear columns
+* convert column types
+* clean up column names
+
+```{r}
+railtrail_trim <- rail_trail %>% 
+  clean_names() %>% 
+  mutate(across(spring:fall, as.logical)) %>% 
+  select(-c(lowtemp, hightemp, fall, day_type))
+
+head(railtrail_trim)
+```
+
+
+### Detect Perfect Collinearity
+
+```{r}
+alias(volume ~ .,
+      data = RailTrail)
+```
+
+
+Check that we've removed the collinearity
+
+```{r}
+alias(volume ~ .,
+      data = railtrail_trim)
+```
+
+Note: `alias` will only detect **perfect** matches
+
+
+### Simple Linear Regression
+
+```{r}
+library(GGally)
+
+ggpairs(railtrail_trim)
+```
+
+Pairs plot - a tool for examining predictors 
+
+Plots every variable against one another
+
+Plot types:
+
+* correlations
+  + interested in **high**
+* distribution of each
+  + interested in **boxplots with different boxes for different categorical levels**
+* scatter plots
+  + interested in any **discernable patterns**
+
+Avg temperature has the highest correlation - START HERE.
+
+y = intercept + m_avg_temp * avg_temp
+
+```{r}
+railtrail_trim %>% 
+  ggplot(aes(x = avgtemp,
+             y = volume))+
+  geom_point()+
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+There does appear to be a linear relationship between volume and avg temp. As temp increases, so does the volume of users on the rail trail.
+
+#### Goodness of fit metrics
+
+* $r^2$: coefficient of determination (1 = perfect, 0 = perfectly imperfect)
+* standard error in the residuals
+  + how far are the residuals from the line
+  + how far on average do the fitted values differ from the measured values (same units as)
+  
+
+```{r}
+model <- lm(volume ~ avgtemp, railtrail_trim)
+```
+
+
+```{r}
+summary(model)
+```
+
+
+```{r}
+library(ggfortify)
+
+autoplot(model)
+```
+
+We can now explain 0.18 of the variation of the volume is due to avg temp (not a lot)
+
+Residual standard error is high (over 100 for measurements that only go up to 500)
+
+How do we improve our model?? ADD PREDICTORS
+
+#### Add predictor
+
+Visualise relationship with a plot
+
+```{r}
+railtrail_trim %>% 
+  ggplot(aes(x = weekday,
+             y = volume))+
+  geom_boxplot()
+```
+
+
+```{r}
+railtrail_trim %>% 
+  summarise(cor = cor(weekday, volume))
+```
+
+A value of -0.3 suggests that volume and weekday are related (there is a dependency)
+
+y = intercept + (b_avg_temp * avg_temp) + (b_weekday * weekday)
+
+```{r}
+# patsy notation
+formula <- volume ~ avgtemp + weekday
+
+model_temp_wday <- lm(formula = formula,
+                      data = railtrail_trim)
+```
+
+
+```{r}
+autoplot(model_temp_wday)
+```
+
+
+```{r}
+summary(model_temp_wday)
+```
+
+We get a slight improvement on $r^2$: 0.18 - 0.25. Our model including avgtemp and weekday can explain 0.25 of the total variation of volume
+
+Slight reduction in RSE too: 115 - 111
+
+Task - 2 mins
+How should we interpret the value of the coefficient for weekdayTRUE?
+
+On average there were 70 fewer people on the trail on weekdays compared to the weekends (holding avgtemp constant)
+
+Visualising the "parallel slopes"
+
+```{r}
+library(mosaic)
+```
+
+```{r}
+formula <- volume ~ avgtemp + weekday
+
+model_temp_wday <- lm(formula = volume ~ avgtemp + weekday,
+                      data = railtrail_trim)
+
+plotModel(model_temp_wday)
+```
+
+Why are there two lines?
+
+2 conditions (2 category levels for weeekday: TRUE or FALSE)
+
+If we had 7 variables, we'd get 7 * 2 lines: TRUE or FALSE
+
+volume = intercept + (b_avg_temp * avg_temp) + (b_weekday * weekday)
+
+rearranged:
+
+when weekday is FALSE:
+
+volume = intercept + (b_avg_temp * avg_temp) + 0
+
+
+#### Add another predictor
+
+```{r}
+railtrail_trim %>% 
+  ggplot(aes(x = summer,
+             y = volume))+
+  geom_boxplot()
+```
+
+
+```{r}
+railtrail_trim %>% 
+  summarise(cor = cor(summer, volume))
+```
+
+
+```{r}
+model_temp_wday_summer <- lm(formula = volume ~ avgtemp + weekday + summer,
+                             data = railtrail_trim)
+```
+
+
+```{r}
+autoplot(model_temp_wday_summer)
+```
+
+
+```{r}
+summary(model_temp_wday_summer)
+```
+
+We're not going to include summer (at this point)
+
+If we were, look more into what we're about to do - looking at interactions (it depends)
+
+```{r}
+plotModel(model_temp_wday_summer)
+```
+
+
+### Interactions
+
+Sometimes there will be a **dependency** on the 'independent' predictors
+
+Back to the second model with avg_temp and weekday
+
+```{r}
+railtrail_trim %>% 
+  ggplot(aes(x = avgtemp,
+             y = volume,
+             colour = weekday))+
+  geom_point()+
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+slopes = avgtemp vs volume
+
+the lines of best fit ("lm") are different for avgtemp vs volume for different weekday levels
+
+volume ~ avgtemp + weekday + avgtemp:weekday 
+
+volume depends on avgtemp, weekday and the dependency of avgtemp on weekday
+
+It depends...
+
+* what does an increase in avgtemp have on volume?
+  + it depends on whether it's a weekday or not
+  
+```{r}
+model_temp_wday_interTW <- lm(volume ~ avgtemp + weekday + avgtemp:weekday, # ":" = "interacting with"
+                              data = railtrail_trim)
+
+summary(model_temp_wday_interTW)
+```
+
+
+```{r}
+plotModel(model_temp_wday_interTW)
+```
+
+
+IF weekday is TRUE:
+
+volume = 285 + 2.45 * avgtemp - 262 + 3.3 * avgtemp
+
+```{r}
+285 + 2.45 * 50 - 262 + 3.3 * 50
+```
+
+IF weekday is FALSE:
+
+volume = 285 + 2.45 * avgtemp
+
+```{r}
+285 + 2.45 * 50
+```
+
+
+### Add cloudcover to the model
+
+Forget about our continuous and categorical interaction for the moment
+
+volume = b_avg_temp * avg_temp + b_weekday * weekday  + b_cloudcover * cloudcover
+
+```{r}
+model3_terms <- lm(volume ~ avgtemp + weekday + cloudcover,
+                   data = railtrail_trim)
+
+autoplot(model3_terms)
+```
+
+
+```{r}
+summary(model3_terms)
+```
+
+A bit more progress with this model
+
+* $r^2$: increased from 25 - 40 which explains 40% of variation in volume
+* RSE: reduced from 110 - 100 users
+
+Interpreting our results:
+
+For a 1 degree increase in temperature, we expect 5.2 more users in volume on the trail (holding all other variables constant)
+
+For a 40 degree, 5 cloudcover weekeday, we expect:
+```{r}
+200 - 47.95 + 5.25 * 40 + 5 * (-16)
+```
+282 users
+
+
+### Interactions between continuous predictors
+
+Task - 5 mins
+Add precip (daily precipitation in inches) into the regression model. Perform diagnostics, and if you find that precip is a significant predictor, interpret its fitted coefficient.
+
+
+```{r}
+model_w_precip <- lm(volume ~ avgtemp + weekday + cloudcover + precip,
+                     data = railtrail_trim)
+
+autoplot(model_w_precip)
+```
+
+
+```{r}
+summary(model_w_precip)
+```
+
+
+volume = intercept + b_avg_temp * avg_temp + b_weekday * weekday + b_cloudcover * cloudcover + b_precip * precip
+
+for a 1 inch increase in rainfall, we'd expect 117.5 fewer users on the trail (as rainfall increases, volume decreases)
+
+#### Incorporate the interaction between avgtemp and precip
+
+volume on the railtrail is dependent on the avgtemp, but that relationship might change due to whether it's raining or not.
+
+```{r}
+model_w_precip_with_IT <- lm(volume ~ avgtemp + weekday + cloudcover + precip + avgtemp:precip,
+                             data = railtrail_trim)
+
+autoplot(model_w_precip_with_IT)
+```
+
+
+```{r}
+summary(model_w_precip_with_IT)
+```
+
+Actually, adding in this interaction has **reduced** the significance of some terms in our model.
+
+```{r}
+avgtemp <- 40
+weekday <- TRUE
+cloudcover <- 5
+precip <- c(0, 0.5, 1)
+
+volume_estimate <- 153.9 + (5.8 * avgtemp) + (-45.9 * weekday) + (-12.9 * cloudcover) + (-100.8 * precip) + (-0.2 * avgtemp * precip)
+```
+
+
+Check the interaction plots to see if there is an effect
+
+```{r}
+railtrail_trim %>% 
+  ggplot(aes(x = avgtemp,
+             y = volume,
+             colour = weekday))+
+  geom_point()+
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+We can't use the above for 2 continuous variables
+
+We need to use a coplot
+
+```{r}
+coplot(volume ~ avgtemp | precip,
+       data = railtrail_trim)
+```
+
+
+Add trendlines
+
+```{r}
+coplot(volume ~ avgtemp | precip,
+       data = railtrail_trim,
+       rows = 1,
+       panel = function(x, y, ...) {
+         points(x, y)
+         abline(lm(y ~ x), col = "red")
+       })
+```
+
+The relationship between volume and average temperature is the 'same' for every level of precipitation.
+
+It is **not likely** that there is a significant interaction betweem avgtemp and precipitation.
+
+```{r}
+library(modelr)
+```
+
+
+```{r}
+railtrail_trim %>% 
+  add_predictions(model = model_w_precip)
+```
+
+
+```{r}
+coefs <- model_w_precip$coefficients
+
+prediction <- coefs["(Intercept)"] + (coefs["avgtemp"] * avgtemp) + (coefs["weekdayTRUE"] * weekday) + (coefs["cloudcover"] * cloudcover) + (coefs["precip"] * precip)
+```
+
+
+

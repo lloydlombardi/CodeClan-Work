@@ -121,7 +121,7 @@ $$
 
 ```{r}
 aircon %>% 
-  summarise(mean_daily_sales = mean(units_sold))
+  summarise(mean_daily_sales = mean(units_sold))r
 ```
 
 Median
