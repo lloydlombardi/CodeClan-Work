@@ -1,0 +1,285 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(modelr)
+library(caret)
+```
+
+
+```{r}
+savings <- CodeClanData::savings
+savings
+```
+
+
+# Data = Pattern + Noise
+
+
+```{r}
+model_overfit <- lm(savings ~ .,
+                    data = savings)
+
+summary(model_overfit)
+```
+
+
+```{r}
+plot(model_overfit)
+```
+
+
+```{r}
+model_wellfit <- lm(savings ~ salary + age + retired,
+                    data = savings)
+
+summary(model_wellfit)
+```
+
+
+```{r}
+plot(model_wellfit)
+```
+
+
+```{r}
+model_underfit <- lm(savings ~ salary,
+                     data = savings)
+
+summary(model_underfit)
+```
+
+
+```{r}
+plot(model_underfit)
+```
+
+
+## Parsimony
+
+* the overfit model isn't simple
+* well-fit model is simple
+* underfit model is too simple
+
+#### Goodness of Fit (GoF)
+
+* $r^2$
+  + larger is better
+* ajd $r^2$ 
+* AIC
+  + smaller is better
+  + Akiake Infotmation Criterion (based on likelihood)
+  + not really GoF measure
+  + more __relative__ GoF measure
+  + used for __comparing__ models
+* BIC
+  + smaller is better
+  + Baysian Information Criterion (based on likelihood)
+  + not really GoF measure
+  + more __relative__ GoF measure
+  + used for __comparing__ models
+  + penalises __more strongly__ than AIC
+  
+
+pull out the adjusted $r^2$ from the models
+```{r}
+summary(model_overfit)$adj.r.squared
+summary(model_wellfit)$adj.r.squared
+summary(model_underfit)$adj.r.squared
+```
+
+
+```{r}
+AIC(model_overfit)
+AIC(model_wellfit)
+AIC(model_underfit)
+```
+
+
+```{r}
+BIC(model_overfit)
+BIC(model_wellfit)
+BIC(model_underfit)
+```
+
+
+put model into tidy data
+```{r}
+summary(model_overfit)
+broom::glance(model_overfit)
+```
+
+
+## Test / train sets
+
+* * __Split data before looking at it__
+* * __Basic cleaning can be done__
+* * __Don't explore patterns or relationships__
+* * __Create a test set__
+* * __Use as much data as possible for training set__
+
+Get our test and train sets
+
+```{r}
+set.seed(9)
+
+n_data <- nrow(savings)
+
+test_index <- sample(1:n_data, size = n_data * 0.2)
+
+test <- slice(savings, test_index)
+train <- slice(savings, -test_index)
+```
+
+
+Fit a model to the __TRAINING__ set
+
+```{r}
+model <- lm( savings ~ salary + age + retired,
+             data = train)
+
+autoplot(model)
+```
+
+
+```{r}
+predictions_test <- test %>% 
+  add_predictions(model) %>% 
+  select(savings, pred)
+
+predictions_test
+```
+
+calculate the mean squared error
+
+```{r}
+predictions_test <- predictions_test %>% 
+  mutate(sq_err = (pred - savings)^2)
+
+mse_test <- mean(predictions_test$sq_err)
+mse_test # normally this would be sqrt'd -> RMSE
+
+sqrt(mse_test)
+```
+
+
+```{r}
+predictions_train <- train %>% 
+  add_predictions(model) %>% 
+  select(savings, pred)
+
+predictions_train
+```
+
+
+```{r}
+predictions_train <- predictions_train %>% 
+  mutate(sq_err = (pred - savings) ^ 2)
+
+mse_train <- mean(predictions_train$sq_err)
+mse_train
+
+sqrt(mse_train)
+```
+
+
+## Bias - Variance Trade-Off
+
+* model with __high bias (low variance)__ 
+  + won't match the data set closely
+* model with __low bias (high variance)__ 
+  + will match the data set very closely
+
+
+## K-fold Cross Variation
+
+```{r}
+# create control settings
+cv_10_fold <- trainControl(method =  "cv",
+                           number = 10,
+                           savePredictions = TRUE)
+
+model_cv <- train(savings ~ salary + age + retired,
+                  data = savings,
+                  trControl = cv_10_fold,
+                  method = "lm")
+```
+
+
+```{r}
+model_cv$pred
+```
+
+
+```{r}
+model_cv$resample
+```
+
+
+```{r}
+mean(model_cv$resample$RMSE)
+```
+
+
+```{r}
+model_cv_all <- train(savings ~ .,
+                  data = savings,
+                  trControl = cv_10_fold,
+                  method = "lm")
+```
+
+
+```{r}
+model_cv_all$resample
+```
+
+
+```{r}
+model_cv_all$resample %>% 
+  ggplot(aes(x = Resample,
+             y = RMSE))+
+  geom_col()
+```
+
+
+```{r}
+mean(model_cv_all$resample$Rsquared)
+mean(model_cv_all$resample$RMSE)
+```
+
+
+## Test, Training and Validation Sets
+
+* test: 20%
+* train: 60%
+* validation: 20%
+
+* fit several models with varying __hyperparameters__
+* find the best combination of hyperparams for each __type__ of model
+* use the __validation__ set to choose the hyperparams
+* re-train model on entire training set (train + validation)
+
+
+## Avoiding Leaks
+
+#### How would you handle NAs????
+
+* if you impute __before__ you split
+  + imputed values in the test set have been __influenced__ by the training set
+* if you impute __after__ you split
+  + clean
+  + explore (minimally)
+  + . __split__
+  + . __training set__
+  + imputations ****
+  + train model
+  + validate
+  + . __test set__
+  + imputations ****
+  
+__We can prevent data leakage by ensuring our pre-processing is done in the training dataset separately from our testing/validation set, as well as ensuring the variables we select are useful predictors that would be available to us at the point that we want to apply our model__
+
+

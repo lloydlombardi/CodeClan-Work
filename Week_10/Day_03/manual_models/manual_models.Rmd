@@ -52,7 +52,7 @@ skim(prestige_log)
 prestige %>% 
   select(prestige, everything()) %>% 
   ggpairs(aes(colour = type,
-              alpha = 0.5))
+              alpha = 0.5))a
 ```
 
 

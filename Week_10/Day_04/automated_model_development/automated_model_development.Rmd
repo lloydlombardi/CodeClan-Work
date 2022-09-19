@@ -1,0 +1,194 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+library(leaps)
+library(tidyverse)
+library(glmulti)
+```
+
+
+```{r}
+insurance <- CodeClanData::insurance
+```
+
+
+## Forward Selection
+
+* start with "NULL" model
+  + intercept only
+* at each step
+  + check all predictors
+  + find the one that raises adj $r^2$ the most
+  + add this predictor to the model
+
+
+## Backward Selection
+
+* start with a "FULL" model
+* remove predictors sequentially
+* see which lowers the adj $r^2$ the least
+* remove from the model
+
+
+## Best Subset Selection
+
+* find all possible combinations
+* keep the one with the best metric (adj $r^2$)
+* options increase __exponentially__
+* very computationally intensive
+
+
+## Leaps package
+
+Limitations:
+
+* it will happily include only some levels of a categorical variable
+* does not handle interactions very well
+* only test model fit using penalised measures of fit, not using test/train splits of k-fold cross variation
+
+```{r}
+insurance
+```
+
+
+```{r}
+regsubsets_forward <- regsubsets(charges ~ .,
+                                 data = insurance,
+                                 nvmax = 8,
+                                 method = "forward") # number of variables maximum
+
+sum_regsubsets_forward <- summary(regsubsets_forward)
+```
+
+
+```{r}
+sum_regsubsets_forward$which
+```
+
+
+```{r}
+plot(regsubsets_forward, scale = "adjr2")
+plot(regsubsets_forward, scale = "bic")
+```
+
+
+```{r}
+plot(sum_regsubsets_forward$rsq, type = "o", pch = 20)
+plot(sum_regsubsets_forward$bic, type = "o", pch = 20)
+```
+
+
+```{r}
+regsubsets_backward <- regsubsets(charges ~ .,
+                                 data = insurance,
+                                 nvmax = 8,
+                                 method = "backward") # number of variables maximum
+
+sum_regsubsets_backward <- summary(regsubsets_backward)
+```
+
+
+```{r}
+plot(regsubsets_backward, scale = "adjr2")
+plot(regsubsets_backward, scale = "bic")
+```
+
+
+```{r}
+plot(sum_regsubsets_backward$rsq, type = "o", pch = 20)
+plot(sum_regsubsets_backward$bic, type = "o", pch = 20)
+```
+
+
+```{r}
+regsubsets_exhaustive <- regsubsets(charges ~ .,
+                                 data = insurance,
+                                 nvmax = 8,
+                                 method = "exhaustive") # number of variables maximum
+
+sum_regsubsets_exhaustive <- summary(regsubsets_exhaustive)
+```
+
+
+```{r}
+plot(regsubsets_exhaustive, scale = "adjr2")
+plot(regsubsets_exhaustive, scale = "bic")
+```
+
+
+```{r}
+plot(sum_regsubsets_exhaustive$rsq, type = "o", pch = 20)
+plot(sum_regsubsets_exhaustive$bic, type = "o", pch = 20)
+```
+
+
+build model with and without region
+
+```{r}
+mod_without_region <- lm(charges ~ age + bmi + children + smoker,
+                         data = insurance)
+
+summary(mod_without_region)
+
+mod_with_region <- lm(charges ~ age + bmi + children + smoker + region,
+                         data = insurance)
+
+summary(mod_with_region)
+```
+
+
+```{r}
+anova(mod_without_region, mod_with_region)
+```
+
+* model 1 has a __higher__ RSS (Residual Sum of Squares)
+* model 2 has a __lower__ RSS
+* there is __no significant__ difference, can ignore region
+
+extract "north" and "south" from regions to compare
+
+```{r}
+insurance <- insurance %>% 
+  mutate(location = substr(region, 1, 5))
+
+mod_without_region_combined <- lm(charges ~ age + bmi + children + smoker,
+                         data = insurance)
+
+summary(mod_without_region_combined)
+
+mod_with_region_combined <- lm(charges ~ age + bmi + children + smoker + location,
+                         data = insurance)
+
+summary(mod_with_region_combined)
+```
+
+
+```{r}
+anova(mod_without_region_combined, mod_with_region_combined)
+```
+
+
+```{r}
+par(mfrow = c(2, 2))
+plot(mod_with_region)
+plot(mod_without_region)
+plot(mod_with_region_combined)
+plot(mod_without_region_combined)
+```
+
+
+
+```{r}
+library(ggfortify)
+mod_4 <- lm(charges ~ age + bmi + smoker + children,
+            data = insurance)
+
+autoplot(mod_4)
+
+summary(mod_4)
+```
+

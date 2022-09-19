@@ -1,0 +1,196 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+library(tidyverse)
+library(modelr)
+library(ggfortify)
+library(GGally)
+```
+
+
+```{r}
+houses <- read_csv("data/kc_house_data.csv")
+```
+
+
+```{r}
+glimpse(houses)
+```
+
+
+```{r}
+houses %>% 
+  ggplot(aes(x = price))+
+  geom_histogram()
+```
+
+
+```{r}
+houses %>% 
+  ggplot(aes(x = price))+
+  geom_histogram()+
+  scale_x_continuous(trans = "log2")
+```
+
+
+```{r}
+houses %>% 
+  ggplot(aes(x = log(price)))+
+  geom_histogram()
+```
+
+
+
+```{r}
+houses <- houses %>% 
+  select(-c(id, date, sqft_living15, sqft_lot15, zipcode)) %>% 
+  mutate(waterfront = as.logical(waterfront)) %>% 
+  mutate(renovated = yr_renovated != 0) %>% 
+  select(-yr_renovated) %>% 
+  mutate(condition = as_factor(condition)) %>% 
+  mutate(grade = as_factor(grade))
+
+houses
+```
+
+
+```{r}
+alias(price ~ .,
+      data = houses)
+
+houses <- houses %>% 
+  select(- sqft_living)
+
+alias(price ~ .,
+      data = houses)
+```
+
+
+```{r}
+houses_numeric <- houses %>% 
+  select_if(is.numeric)
+
+houses_nonnumeric <- houses %>% 
+  select_if(function(x) !is.numeric(x))
+
+houses_nonnumeric$price <- houses$price
+```
+
+
+```{r}
+houses_numeric %>% 
+  select(price, everything()) %>% 
+  ggpairs()
+```
+
+
+
+```{r}
+houses_nonnumeric %>% 
+  select(ln_price, everything()) %>% 
+  ggpairs()
+```
+
+
+Feature engineering
+
+```{r}
+houses <- houses %>%
+  filter(bedrooms > 0) %>% 
+  mutate(ln_price = log(price),
+         ln_living_space = log(sqft_above + sqft_basement),
+         prop_above = sqft_above/(sqft_above + sqft_basement),
+         size_room_ratio = (sqft_above + sqft_basement) / bedrooms)
+```
+
+
+```{r}
+library(skimr)
+
+skim(houses)
+```
+
+
+```{r}
+houses_numeric <- houses %>% 
+  select_if(is.numeric)
+
+houses_nonnumeric <- houses %>% 
+  select_if(function(x) !is.numeric(x))
+
+houses_nonnumeric$ln_price <- houses$ln_price
+```
+
+
+
+```{r}
+houses_numeric %>% 
+  select(price, everything()) %>% 
+  ggpairs()
+```
+
+
+```{r}
+houses_numeric %>% 
+  select(ln_price, everything()) %>% 
+  ggpairs()
+```
+
+
+```{r}
+mod1a <- lm(ln_price ~ ln_living_space,
+            data = houses)
+
+autoplot(mod1a)
+```
+
+
+```{r}
+summary(mod1a)
+```
+
+
+```{r}
+mod1b <- lm(ln_price ~ sqft_above,
+            data = houses)
+
+autoplot(mod1b)
+```
+
+
+```{r}
+summary(mod1b)
+```
+
+
+```{r}
+mod1c <- lm(ln_price ~ waterfront,
+            data = houses)
+
+autoplot(mod1c)
+```
+
+
+```{r}
+summary(mod1c)
+```
+
+
+```{r}
+mod1d <- lm(ln_price ~ grade,
+            data = houses)
+
+autoplot(mod1d)
+```
+
+
+```{r}
+summary(mod1d)
+```
+
+
+
