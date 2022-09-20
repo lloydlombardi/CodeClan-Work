@@ -265,7 +265,7 @@ a model that assigns a class based on this predicted probability
   
 The probability level at which we assign "yes" and "no" is called the **threshold**
 
-so, for a 0.6 threshold, iff the predicted probability of being accepted is greater than 0.6 --> accept
+so, for a 0.6 threshold, if the predicted probability of being accepted is greater than 0.6 --> accept
 
 ```{r}
 mortgage_preds_2_terms <- mortgage %>% 
