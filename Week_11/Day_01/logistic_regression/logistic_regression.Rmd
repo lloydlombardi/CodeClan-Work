@@ -202,7 +202,6 @@ a 50 unit increase of tu_score increases our odds by a factor of 1.52768
 
 ## Categorical Predictors
 
-
 ```{r}
 mortgage_model_2_terms <- glm(
   accepted ~ tu_score + employed,
@@ -254,6 +253,161 @@ odds_change(1.48, 1)
 ```
 On average, the customer's odds of being accepted for a mortgage are 4.39 times higher if they are employed
 
-yes
+
+## Model Performance: Building a Binary Classifier
+
+Rather than knowing the equation of a squiggle and how increasing/decreasing your credit score / employment affected the probability you'd be accepted for a mortgage...
+
+a model that assigns a class based on this predicted probability
+
+* if applicant approaches our bank asking for a mortgage:
+  + if their credit score is X and employment is Y, will they be accepted?
+  
+The probability level at which we assign "yes" and "no" is called the **threshold**
+
+so, for a 0.6 threshold, iff the predicted probability of being accepted is greater than 0.6 --> accept
+
+```{r}
+mortgage_preds_2_terms <- mortgage %>% 
+  # add our predicted probs from the log model
+  add_predictions(mortgage_model_2_terms, type = "response") %>% 
+  # this is the binary classifier step
+  mutate(pred_accepted = pred >= 0.6)
+```
+
+## Model Assessment - How often did we get it right?
+
+* Quick Assessment Tool: The Confusion Matrix
+
+```{r}
+library(janitor)
+```
+
+```{r}
+mortgage_preds_2_terms %>% 
+  tabyl(accepted, pred_accepted)
+```
+          | predictions |
+| reality |   TN
+                    TP
+
+
+```{r}
+mortgage_3pred_model <- glm(accepted ~ tu_score + age + employed,
+                            data = mortgage,
+                            family = binomial(link = "logit"))
+
+summary(mortgage_3pred_model)
+```
+
+
+```{r}
+mortage_data_with_3pred <- mortgage %>% 
+  add_predictions(mortgage_3pred_model, type = "response") %>% 
+  mutate(pred_accepted = pred >= 0.6)
+```
+
+```{r}
+mortage_data_with_3pred %>% 
+  tabyl(accepted, pred_accepted) %>% 
+  adorn_title()
+```
+
+You will always have:
+
+* times your model was **correct** (FALSE:FALSE (679) & TRUE:TRUE (179))
+* times your model was **wrong** (FALSE:TRUE (93) & TRUE:FALSE(49))
+* 0's in the **incorrect** diagonal would be indicative of a perfect classifier
+* TN - FALSE:FALSE (People didn't get a mortgage, model predicts no mortgage)
+* TP - TRUE:TRUE (People did get a mortgage, model predicts mortgage)
+* FP - TRUE:FALSE (People didn't get a mortgage, model predicts mortgage)
+* FN - FALSE:TRUE (People did get a mortgage, model predicts no mortgage)
+
+
+Task - 5 mins
+Extract the rows in mortgage_data with tu_score = 594. Compare the sample data outcomes with the predicted outcomes of the threshold 0.6 classifier and say which of the following four groups each outcome belongs to: (i) true positive, (ii) true negative, (iii) false positive or (iv) false negative.
+```{r}
+mortage_data_with_3pred %>% 
+  filter(tu_score == 594)
+```
+
+i. FALSE POSITIVE
+ii. FALSE POSITIVE
+iii. TRUE POSITIVE
+iv. TRUE POSITIVE
+v. TRUE POSITIVE
+
+What measures of accuracy do we have?
+How do we boil this down into a single value of accuracy
+
+Accuracy = nTP + nTN / N
+(times we were right) / (nrows)
+
+```{r}
+mortage_data_with_3pred %>% 
+  tabyl(accepted, pred_accepted) %>% 
+  adorn_title()
+
+(679 + 179) / (nrow(mortage_data_with_3pred))
+```
+We were correct in our predictions about 85% of the time
+
+The bad news is that accuracy has a subtle weakness
+
+Consider this case:
+
+We run a test at the end of the school year for 1000 students
+900 students pass the test
+100 students do not pass the test
+
+what accuracy would my 'always pass' model get?
+900 / 1000 = 90%
+
+the subtle weakness of accuracy is that if the model is unbalanced, it can show the model to be highly accurate 
+
+This is why we've got other performance measures:
+
+* accuracy 
+* rates
+* specificity
+* AUC
+* GINI
+
+True Positive Rate / Sensitivity
+
+The probability that an actual positive will test positive
+
+TP / TP + FN
+
+```{r}
+mortage_data_with_3pred %>% 
+  tabyl(accepted, pred_accepted) %>% 
+  adorn_title()
+
+nTN = 679
+nFP = 49
+nFN = 93
+nTP = 179
+
+true_positive_rate <- nTP / (nTP + nFN)
+true_positive_rate
+
+true_negative_rate <- nTN / (nTN + nFP)
+true_negative_rate
+
+false_positive_rate <- nFP / (nFP + nTN)
+false_positive_rate
+
+false_negative_rate <- nFN / (nFN + nTP)
+false_negative_rate
+```
+
+Which should we prioritise??
+
+* no **one** answer to this
+* a loan-giving business might not mind as many false positives if it means they still give lots of people loans that should get them
+* a disease testing company would care **a lot** about false positives
+
+
 
 

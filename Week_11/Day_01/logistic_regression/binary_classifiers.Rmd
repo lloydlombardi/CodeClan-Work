@@ -1,0 +1,232 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(modelr)
+library(janitor)
+```
+
+
+```{r}
+mortgage_data <- read_csv("data/mortgage_applications.csv") %>% 
+  clean_names()
+```
+
+
+```{r}
+# build a logistic regression model
+mortgage_glm <- glm(
+  accepted ~ tu_score + employed + age,
+  data = mortgage_data,
+  family = binomial(link = "logit")
+)
+
+# create binary classifier - should we accept applicants??
+mortgage_data_pred <- mortgage_data %>% 
+  add_predictions(model = mortgage_glm, type = "response")
+
+# each row is used to predict whether or not each person will be accepted for a mortgage
+head(mortgage_data_pred)
+```
+
+
+Recap of terms:
+
+* TP Rate: proportion of actual positive cases that are correctly identified by the classifier (prop of accepted mortgages, predicted correctly)
+  + TPR = nTP / (nTP + nFN)
+* FP Rate: proportion of actual negative cases that are missclassified
+  + FPR = nFP / (nFP + nTN)
+  
+Wouldn't it be good if we could visualise the **effectiveness** of our classifier? (Effectiveness is meaning TPR vs FPR)
+
+ROC (Receiver Operator Characteristic) Curves
+
+is the 'beep' meaning there's an enemy plane, or is it just noise (e.g. some burds)
+
+```{r}
+library(pROC)
+```
+
+
+```{r}
+roc_obj_3_terms <- mortgage_data_pred %>% 
+  roc(response = accepted,
+      predictor = pred)
+
+ggroc(data = roc_obj_3_terms,
+      legacy.axes = TRUE) +
+  labs(x = "False Positive Rate",
+       y = "True Positive Rate")
+```
+
+* as we decrease the threshold at which we classify, we increase the rate of false positives (incorrectly accepting people for loans)
+* as we increase the threshold at which we classify, we decrease the rate of false positives
+
+```{r}
+tibble(
+  threshold = roc_obj_3_terms$thresholds,
+  true_positive_rate = roc_obj_3_terms$sensitivities,
+  false_positive_rate = roc_obj_3_terms$specificities
+)
+```
+
+
+```{r}
+mortgage_1pred_model <- glm(accepted ~ tu_score,
+                           data = mortgage_data,
+                           family = binomial(link = "logit"))
+
+mortgage_data_with_1_pred <- mortgage_data %>% 
+  add_predictions(mortgage_1pred_model, type = "response")
+
+roc_obj_1pred <- mortgage_data_with_1_pred %>% 
+  roc(response = accepted,
+      predictor = pred)
+
+ggroc(data = list("three terms" = roc_obj_3_terms, "one term" = roc_obj_1pred),
+      legacy.axes = TRUE) +
+  labs(x = "False Positive Rate",
+       y = "True Positive Rate")
+```
+
+
+```{r}
+mortgage_1pred_model_2 <- glm(accepted ~ age,
+                           data = mortgage_data,
+                           family = binomial(link = "logit"))
+
+mortgage_data_with_1_pred_2 <- mortgage_data %>% 
+  add_predictions(mortgage_1pred_model_2, type = "response")
+
+roc_obj_1pred_2 <- mortgage_data_with_1_pred_2 %>% 
+  roc(response = accepted,
+      predictor = pred)
+
+ggroc(data = list("three terms" = roc_obj_3_terms, "tu_score" = roc_obj_1pred, "age" = roc_obj_1pred_2),
+      legacy.axes = TRUE) +
+  labs(x = "False Positive Rate",
+       y = "True Positive Rate")
+```
+
+
+What about giving a value to how good of a predictor our model is??
+
+* AUC (Area Under Curve)
+  + ROC curves closer to (0,1) will have a **larger** space under the line
+  + Number between 0 and 1
+  + Usually the operating range for AUC is between 0.5 and 1
+  + Higher is better
+  + A single number value to express how good of a classifier the model is
+  + 0.5 is a crappy classifier
+
+```{r}
+auc(roc_obj_3_terms)
+
+auc(roc_obj_1pred)
+```
+
+* model with three terms:
+  + Area under the curve: 0.8881
+* model with one term:
+  + Area under the curve: 0.8666
+  
+* Gini
+  + A single number value to express how good of a classifier the model is
+  + Gini = 2 AUC - 1
+  + Number betweem -1 and 1 (higher is better)
+  + 0 is a crappy classifier
+  + Anything negative is worse than randomly guessing
+
+```{r}
+gini3 <- 2 * auc(roc_obj_3_terms) - 1
+
+gini1 <- 2 * auc(roc_obj_1pred) - 1
+
+gini3
+gini1
+```
+
+
+## Cross Validation
+
+* Splitting data before building a model into test and train
+* Model is trained on training data
+* Model is tested on testing data
+
+5-fold cross validation
+
+* split data into 5 folds
+* take each 1/5th as testing
+* train the model with remaining 4/5ths
+* repeat 5 times
+
+```{r}
+library(caret)
+```
+
+```{r}
+# caret needs factor data instead of logical
+mortgage_data <- mortgage_data %>%
+  mutate(employed = as_factor(if_else(employed, "t", "f")),
+         accepted = as_factor(if_else(accepted, "t", "f")),
+         employed = relevel(employed, ref = "f"),
+         accepted = relevel(accepted, ref = "f")) 
+```
+
+
+set up caret trainControl
+```{r}
+train_control <- trainControl(
+  method = "repeatedcv",
+  number = 5,
+  repeats = 100,
+  savePredictions = TRUE,
+  classProbs = TRUE,
+  # retain performance stats for binary classifier (AUC, TPR, FPR)
+  summaryFunction = twoClassSummary
+)
+```
+
+
+```{r}
+# train each fold using our three term model
+val_model <- train(
+  accepted ~ tu_score + employed + age,
+  data = mortgage_data,
+  family = binomial(link = "logit"),
+  method = "glm",
+  trControl = train_control
+)
+```
+
+
+```{r}
+summary(val_model)
+```
+
+
+```{r}
+val_model$results
+```
+
+* Sens = Sensitivity (TPR)
+* Spec = Specificity (FPR)
+* ROC = Area Under ROC Curve (AUC)
+
+Results:
+
+* AUC - 0.8863832
+* TPR - 0.8808222
+* FPR - 0.6954202
+
+
+```{r}
+val_model$pred
+```
+
+
+
+
