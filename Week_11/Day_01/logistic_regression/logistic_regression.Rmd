@@ -1,0 +1,258 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Logistic Regression
+
+## Main Ideas
+
+```{r}
+library(tidyverse)
+```
+
+How would we fit a line to this?
+```{r}
+# logistic_model <- glm(pass ~ time_spent_studying, family = binomial(), student_results)
+
+student_results <- tibble(
+  time_spent_studying = c(1.5, 1, 2.2, 1.2, 4.6, 5.0, 2.6, 2.5, 4, 3.2, 0.5, 0.8, 1.8, 4.5, 3.8, 2.8, 4.2, 3, 3.5, 0.2),
+  pass = c(FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, TRUE, FALSE, TRUE, TRUE, TRUE, TRUE, FALSE)
+)
+
+ggplot(student_results, aes(time_spent_studying, pass)) +
+  geom_point()
+```
+
+We could try fitting a straight line
+```{r}
+lm(pass ~ time_spent_studying,
+   data = student_results)
+```
+Why doesn't linear regression work well for this data??
+
+* Can predict outside of the range
+* High error
+
+Instead, a fit we might want:
+
+* predict a probability of Pass / Fail (0 - 1)
+* would closely align with data points
+
+How do we make a line do this??
+
+* logistic regression
+
+First, we need to talk about `Odds`
+
+* a ratio of success : failure
+* odds of tossing a coin and getting a head are:
+  + 1 success (head) : 1 failure (tails)
+  + 1:1
+* odds of rolling a 6 on a fair dice:
+  + 1 success (6) : 5 failures (1, 2, 3, 4, 5)
+  + 1:5
+
+
+```{r}
+mortgage <- read_csv("data/mortgage_applications.csv") %>% janitor::clean_names()
+```
+
+
+```{r}
+library(GGally)
+mortgage %>% 
+  ggpairs()
+```
+
+```{r}
+mortgage %>% 
+  ggplot(aes(x = tu_score)) +
+  geom_histogram()
+```
+
+
+```{r}
+mortgage %>% 
+  ggplot(aes(x = tu_score,
+             y = accepted)) +
+  geom_point()
+```
+
+
+```{r}
+mortgage %>% 
+  ggplot(aes(x = tu_score,
+             y = as.integer(accepted))) +
+  geom_jitter()
+```
+
+
+Logistic Regression Assumptions
+
+* dependent variable should be binary
+* no outliers in the data
+* no high correlations between predictors
+* can be used to predict probability of an event
+* often used to classify
+
+Glossary:
+
+* probability
+  + n success / n outcomes
+  + 1 / 6 for rolling a 6
+  + prob (x) = odds (x) / 1 + odds (x)
+* odds
+  + n success / n failures
+  + 1 : 5 for rolling a 6
+  + odds (x) = prob (x) / 1 - prob (x) 
+  + odds (rolling success) = (1 / 6) / 1 - (1 / 6) = 0.2
+* odds ratio 
+
+* ln / log
+
+* link funciton
+
+* logit
+
+* odds factor
+
+
+```{r}
+logit <- function(x){
+  return(log(x / (1-x)))
+}
+
+logit_data <- tibble(p = seq(0.001, 0.999, 0.001)) %>% 
+  mutate(logit_p = logit(p))
+
+head(logit_data)
+```
+
+
+```{r}
+logit_data %>% 
+  ggplot(aes(x = logit_p,
+             y = p)) +
+  geom_line() + 
+  labs(x = "logit (p) value",
+       y = "probability")
+```
+
+
+## Logistic Regression in R
+
+```{r}
+mortgage_logreg_model <- glm(accepted ~ tu_score,
+                             data = mortgage,
+                             family = binomial(link = "logit"))
+
+summary(mortgage_logreg_model)
+```
+
+p^ = 1 / (1 + exp(-4.575035 + 0.008475 tu_score))
+
+**as tu_score increases, the probability of being accepted increases**
+a 1 unit increase of tu_score increases the log odds by 0.008
+
+```{r}
+library(modelr)
+```
+
+
+```{r}
+# 0 - 710 are the options for credit score
+# map a prediction of accepted or not for credit score
+log_predictions <- tibble(
+  tu_score = seq(0, 710, 1)
+) %>% 
+  add_predictions(model = mortgage_logreg_model,
+                  type = "response")
+
+ggplot(mortgage)+
+  geom_jitter(aes(x = tu_score,
+                  y = as.numeric(accepted)), alpha = 0.5, height = 0.1, width = 0.1) +
+  geom_line(data = log_predictions, aes(x = tu_score, y = pred), col = "red")+
+  labs(y = "Estimated (Accepted)")
+```
+
+Use predictions to filter prediction table to look at odds
+```{r}
+log_predictions %>% 
+  filter(tu_score == 600)
+
+log_predictions %>% 
+  filter(tu_score == 300)
+```
+How do our odds of getting accepted for a mortgage change as we increase tu_score??
+
+odds at a baseline level (tu_score = 594)
+odds at a bit above baseline level(tu_score + 50)
+
+how does increasing our tu_score by 50 affect our odds??
+
+```{r}
+odds_change <- function(b1, change){
+  exp(b1 * change)
+}
+
+odds_change(0.008475, 50)
+```
+a 50 unit increase of tu_score increases our odds by a factor of 1.52768
+
+## Categorical Predictors
+
+
+```{r}
+mortgage_model_2_terms <- glm(
+  accepted ~ tu_score + employed,
+  data = mortgage,
+  family = binomial(link = "logit")
+)
+
+summary(mortgage_model_2_terms)
+```
+
+ln(Odds(Accepted)) = b0 + b1 * tu_score + b2 * employed_TRUE
+ln(Odds(Accepted)) = b0 + 0.0067239 * tu_score + 1.4845379 * employed_TRUE
+
+
+```{r}
+# map a prediction of accepted or not for each credit score for employment
+log_predictions <- tibble(
+  tu_score = rep(seq(0, 710, 1), 2),
+  employed = c(rep(TRUE, 711), rep(FALSE, 711))
+) %>% 
+  add_predictions(model = mortgage_model_2_terms,
+                  type = "response")
+
+ggplot(mortgage)+
+  geom_jitter(aes(x = tu_score,
+                  y = as.numeric(accepted)), alpha = 0.5, height = 0.1, width = 0.1) +
+  geom_line(data = log_predictions, aes(x = tu_score, y = pred, colour = employed))+
+  labs(y = "Estimated (Accepted)")
+```
+
+
+```{r}
+log_predictions %>% 
+  filter(tu_score == 600)
+
+log_predictions %>% 
+  filter(tu_score == 300)
+```
+
+
+Interpretation of categorical predictors:
+
+Again we look at compared to our reference level
+
+odds(employed = TRUE) / odds(employed = FALSE) = odds ratio
+
+```{r}
+odds_change(1.48, 1)
+```
+On average, the customer's odds of being accepted for a mortgage are 4.39 times higher if they are employed
+
+
+
