@@ -1,0 +1,217 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(rpart)
+library(rpart.plot)
+library(tidyverse)
+library(janitor)
+```
+
+
+```{r}
+thrones <- read_csv("data/character_data_S01-S08.csv")
+```
+
+
+```{r}
+clean_thrones<- thrones %>% 
+# Only keep variables of interest
+  select(c(sex, religion, occupation, social_status, allegiance_last, allegiance_switched, dth_flag, featured_episode_count, prominence)) %>% 
+# Convert to factor level
+    mutate(sex = factor(sex, levels = c(1, 2, 9), labels = c("Male", "Female", "Unknown")),
+    religion = factor(religion, levels = c(0, 1, 3, 4, 5, 6, 7, 9), labels = c("Great Stallion", "Lord of Light", "Faith of the Seven", "Old Gods", "Drowned God", "Many Faced God", "Other", "Unknown")),
+    occupation = factor(occupation, levels = c(1, 2, 9), labels = c("Silk-collar", "Leather-collar", "Unknown")),
+    social_status = factor(social_status, levels = c(1, 2, 9), labels = c("Highborn", "Lowborn", "Unknown")),
+    allegiance_last = factor(allegiance_last, levels = c(1, 2, 3, 4, 5, 6, 7, 8, 9), labels = c("Stark", "Targaryen", "Night's Watch", "Lannister", "Greyjoy", "Bolton", "Frey", "Other", "Unknown")),
+    allegiance_switched = factor(allegiance_switched, levels = c(1, 2, 9), labels = c("No", "Yes", "Unknown")),
+    dth_flag = factor(dth_flag, levels = c(0, 1), labels = c("Survived", "Died"))) %>%
+# Remove NAs 
+ na.omit()
+```
+
+
+```{r}
+clean_thrones
+```
+
+## train / test split
+
+```{r}
+set.seed(19)
+
+n_data <- nrow(clean_thrones)
+
+test_index <- sample(1:n_data, size = n_data * 0.2)
+
+thrones_test <- slice(clean_thrones, test_index)
+
+thrones_train <- slice(clean_thrones, -test_index)
+```
+
+
+```{r}
+thrones_test %>% 
+  tabyl(dth_flag) 
+```
+
+
+```{r}
+thrones_train %>% 
+  tabyl(dth_flag) 
+```
+
+
+## Build the model
+
+```{r}
+thrones_fit <- rpart(
+  formula = dth_flag ~ .,
+  data = thrones_train,
+  method = "class"
+)
+```
+
+
+## Visualise decision tree
+
+```{r}
+rpart.plot(thrones_fit,
+           yesno = 2,
+           fallen.leaves = TRUE,
+           faclen = 6,
+           digits = 4)
+```
+
+
+```{r}
+rpart.plot(thrones_fit,
+           yesno = 2,
+           fallen.leaves = TRUE,
+           digits = 4,
+           type = 4,
+           extra = 101)
+```
+
+
+```{r}
+rpart.rules(thrones_fit,
+            cover = TRUE)
+```
+
+
+## Create Predictions
+```{r}
+library(modelr)
+```
+
+
+```{r}
+thrones_test_pred <- thrones_test %>% 
+  add_predictions(thrones_fit, type = "class")
+
+thrones_test_pred %>% 
+  select(dth_flag, pred)
+```
+
+
+```{r}
+thrones_test_pred %>% 
+  select(prominence, religion, allegiance_last, featured_episode_count, dth_flag, pred)
+```
+
+
+## Check the performance
+
+```{r}
+library(yardstick)
+```
+
+
+```{r}
+conf_mat <- thrones_test_pred %>% 
+  conf_mat(truth = dth_flag,
+           estimate = pred)
+
+conf_mat
+```
+
+
+```{r}
+thrones_test_pred %>% 
+  accuracy(truth = dth_flag,
+           estimate = pred)
+```
+
+
+```{r}
+thrones_test_pred %>% 
+  sensitivity(truth = dth_flag,
+           estimate = pred)
+```
+
+
+```{r}
+library(caret)
+
+confusionMatrix(thrones_test_pred$pred,
+                thrones_test_pred$dth_flag)
+```
+
+
+## Random Forest
+
+```{r}
+library(ranger)
+```
+
+
+```{r}
+# how to build a machine learning grid
+# crossing(num_trees = 8:10 * 100,
+#          mtry = 4:6,
+#          min.node.size = 3:5)
+
+rf_classifier <- ranger(dth_flag ~ .,
+                        data = thrones_train,
+                        importance = "impurity",
+                        num.trees = 1000, # how many trees
+                        mtry = 2, # how to split the variables
+                        min.node.size = 5) # hyperparameters
+```
+
+
+train --> test
+
+train      --> 60%
+validation --> 20% for validating hyperparameters
+re-train on train + val sets
+test       --> 20%
+
+k-fold cross validation
+
+```{r}
+sort(importance(rf_classifier), dec = TRUE)
+```
+
+## Random Forest Output
+```{r}
+thrones_test_pred <- thrones_test %>% 
+  mutate(pred = predict(rf_classifier, thrones_test)$predictions)
+
+thrones_test_pred %>% 
+  select(prominence, religion, allegiance_last, featured_episode_count, dth_flag, pred)
+```
+
+
+```{r}
+confusionMatrix(thrones_test_pred$pred,
+                thrones_test_pred$dth_flag)
+```
+THis model is slightly more accurate
+The TRUE Deaths has increased from 32 --> 38
+The FALSE Deaths has decreased from 10 --> 4
+
+
