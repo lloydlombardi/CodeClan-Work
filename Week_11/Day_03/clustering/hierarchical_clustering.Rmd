@@ -1,0 +1,195 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Hierarchical Clustering
+
+```{r}
+library(tidyverse)
+library(dendextend)
+library(factoextra)
+library(cluster)
+library(corrplot)
+```
+
+
+```{r}
+edu_data <- read_csv("data/school_data.csv") %>% janitor::clean_names()
+```
+
+
+```{r}
+library(skimr)
+
+skim(edu_data)
+```
+
+
+```{r}
+head(edu_data)
+```
+
+* prepare data for clustering
+* remove character column
+* use `column_to_rownames()`
+```{r}
+edu_data <- edu_data %>% 
+  column_to_rownames(("x1")) 
+
+edu_data
+```
+
+
+* standardise the scales
+* units won't affect distance measures
+* sd = 1, mean = ~0
+```{r}
+edu_data_scaled <- edu_data %>% 
+  mutate(across(.fns = scale))
+
+skim(edu_data_scaled)
+```
+
+
+* check for correlations
+```{r}
+edu_data_scaled %>% 
+  cor() %>% 
+  corrplot(method = "number",
+           type = "lower")
+```
+
+
+* calculate distances between points
+* make a dissimilarity matrix
+```{r}
+diss_matrix <- edu_data_scaled %>% 
+  select(home_school) %>% 
+  dist(method = "euclidean")
+```
+
+
+```{r}
+diss_matrix_all <- edu_data_scaled %>%
+  dist(method = "euclidean")
+```
+
+
+visualise `diss_matrix`
+```{r}
+fviz_dist(diss_matrix)
+```
+
+
+```{r}
+fviz_dist(diss_matrix_all)
+```
+
+
+```{r}
+clusters <- diss_matrix %>% 
+  hclust(method = "complete")
+```
+
+
+```{r}
+clusters_all <- diss_matrix_all %>% 
+  hclust(method = "complete")
+```
+
+
+
+```{r}
+clusters %>% 
+  plot(cex = 0.5,
+       hang = -5)
+```
+
+Change linkage method
+```{r}
+alt_clusters <- diss_matrix %>% 
+  hclust(method = "ward.D2")
+```
+
+force clusters to be a dendrogram
+```{r}
+clustering_denderogram <- clusters %>% 
+  as.dendrogram() %>% 
+  dendextend::set("labels_cex", 0.5)
+
+clustering_denderogram
+```
+
+force alt_clusters to be a dendrogram
+```{r}
+alt_clustering_denderogram <- alt_clusters %>% 
+  as.dendrogram() %>% 
+  dendextend::set("labels_cex", 0.6)
+
+alt_clustering_denderogram
+```
+
+
+```{r}
+dend_diff(clustering_denderogram, alt_clustering_denderogram)
+```
+
+
+```{r}
+plot(clusters, cex = 0.6, hang = -1)
+rect.hclust(clusters, k = 2, border = 2:5)
+```
+
+
+```{r}
+plot(clusters, cex = 0.6, hang = -1)
+rect.hclust(clusters, k = 5, border = 2:5)
+```
+
+
+```{r}
+edu_clustered_k5 <- edu_data %>% 
+  mutate(school_cluster_group = cutree(clusters, k = 5))
+
+head(edu_clustered_k5, 20)
+```
+
+
+Giving groups labels
+```{r}
+edu_clustered_k5 %>% 
+  group_by(school_cluster_group) %>% 
+  summarise(mean_home_school = mean(home_school))
+```
+
+
+```{r}
+edu_clustered_k5 %>% 
+  group_by(school_cluster_group) %>% 
+  summarise(across(.fns = mean))
+```
+
+
+```{r}
+edu_clustered_k6_all <- edu_data %>% 
+  mutate(school_cluster_group = cutree(clusters_all, k = 5))
+
+head(edu_clustered_k6_all, 20)
+```
+
+
+```{r}
+edu_clustered_k6_all %>% 
+  group_by(school_cluster_group) %>% 
+  summarise(across(.fns = mean))
+```
+
+
+```{r}
+plot(clusters, cex = 0.6, hang = -1)
+rect.hclust(clusters, h = 1, border = 2:6)
+```
+
+
+
