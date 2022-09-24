@@ -18,16 +18,18 @@ students_importance <- students_big %>%
 
 
 ```{r}
-library(GGally)
-students_importance %>% 
-  ggpairs()
+students_importance <- students_importance %>% 
+  rowwise() %>% 
+  mutate(importance_average = mean(c(importance_reducing_pollution, importance_recycling_rubbish, importance_conserving_water, importance_saving_enery, importance_owning_computer, importance_internet_access))) %>% 
+  ungroup()
+
 ```
 
 
 ```{r}
+library(GGally)
 students_importance %>% 
-  rowwise() %>% 
-  mutate(importance_average = mean(c(importance_reducing_pollution, importance_recycling_rubbish, importance_conserving_water, importance_saving_enery, importance_owning_computer, importance_internet_access)))
+  ggpairs()
 ```
 
 
@@ -108,6 +110,76 @@ clusterings_tech %>%
   filter(k <= 6) %>% 
   ggplot(aes(x = importance_owning_computer,
              y = importance_internet_access))+
+  geom_point(aes(colour = .cluster))+
+  facet_wrap(~ k)
+```
+
+
+```{r}
+student_pollution <- students_importance %>% 
+  select(importance_reducing_pollution, importance_average)
+```
+
+
+```{r}
+student_pollution %>% 
+  ggplot(aes(x = importance_reducing_pollution,
+             y = importance_average)) +
+  geom_point()
+```
+
+
+```{r}
+k_clusters_pollution <- tibble(k = 1:max_k) %>% 
+  mutate(
+    kclust = map(k, ~ kmeans(student_pollution, .x, nstart = 25)),
+    tidied = map(kclust, tidy),
+    glanced = map(kclust, glance),
+    augmented = map(kclust, augment, student_pollution)
+  )
+```
+
+
+```{r}
+clusterings_pollution <- k_clusters_pollution %>% 
+  unnest(glanced)
+
+k_clusters_pollution
+```
+
+
+```{r}
+clusterings_pollution %>% 
+  ggplot(aes(x = k,
+             y = tot.withinss))+
+  geom_point()+
+  geom_line()+
+  scale_x_continuous(breaks = seq(1, 20 , 1))
+```
+
+
+```{r}
+fviz_nbclust(student_pollution,
+             kmeans,
+             method = "silhouette",
+             nstart = 25)
+```
+
+
+```{r}
+fviz_nbclust(student_pollution,
+             kmeans,
+             method = "gap_stat",
+             nstart = 25)
+```
+
+
+```{r}
+clusterings_pollution %>% 
+  unnest(cols = c(augmented)) %>% 
+  filter(k <= 6) %>% 
+  ggplot(aes(x = importance_reducing_pollution,
+             y = importance_average))+
   geom_point(aes(colour = .cluster))+
   facet_wrap(~ k)
 ```
