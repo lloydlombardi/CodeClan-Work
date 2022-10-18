@@ -1,0 +1,352 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+library(tidyverse)
+```
+
+
+```{r}
+international <- read_csv("clean_data/international.csv")
+
+international
+```
+
+
+```{r}
+usa <- international %>% 
+  filter(country == "USA") %>% 
+  mutate(year = as.character(year)) %>% 
+  drop_na()
+
+usa
+```
+
+
+```{r}
+usa %>% 
+  ggplot(aes(x = visits_thousands,
+             y = expenditure_millions)) +
+  geom_point()
+```
+
+
+```{r}
+usa_scale <- usa %>%
+  mutate(across(where(is_numeric), scale)) %>% 
+  select(visits_thousands, expenditure_millions)
+
+
+head(usa_scale, 10)
+```
+
+
+```{r}
+usa_scale %>% 
+  ggplot(aes(x = visits_thousands,
+             y = expenditure_millions)) +
+  geom_point()
+```
+
+
+
+```{r}
+library(broom)
+
+max_k <- 20
+
+k_clusters <- tibble(k = 1:max_k) %>% 
+  mutate(
+    kclust = map(k, ~kmeans(usa_scale, .x, nstart = 25)),
+    tidied = map(kclust, tidy),
+    glanced = map(kclust, glance),
+    augemnted = map(kclust, augment, usa)
+  )
+
+k_clusters
+```
+
+
+```{r}
+augmented <- k_clusters %>% 
+  unnest(augemnted)
+
+augmented
+```
+
+
+```{r}
+augmented %>% 
+  filter(k == 3) %>% 
+  count(.cluster)
+```
+
+
+
+```{r}
+clusterings <- k_clusters %>% 
+  unnest(glanced)
+
+clusterings
+```
+
+
+```{r}
+ggplot(clusterings, aes(x=k, y=tot.withinss)) +
+  geom_point() +
+    geom_line() +
+    scale_x_continuous(breaks = seq(1, 20, by = 1))
+```
+
+
+```{r}
+library(factoextra)
+```
+
+
+```{r}
+fviz_nbclust(usa_scale, 
+             kmeans, 
+             method = "wss", 
+             nstart = 25)
+```
+
+
+```{r}
+fviz_nbclust(usa_scale, 
+             kmeans, 
+             method = "silhouette", 
+             nstart = 25)
+```
+
+
+```{r}
+fviz_nbclust(usa_scale, 
+             kmeans, 
+             method = "gap_stat", 
+             nstart = 25, 
+             k.max = 10)
+```
+
+
+
+```{r}
+augmented <- augmented %>%
+  filter(k == 3) %>% 
+  mutate(cluster_group = case_when(
+    .cluster == 3 ~ "smaller spenders",
+    .cluster == 1 ~ "big spenders",
+    .cluster == 2 ~ "medium spenders"
+  )) %>% 
+  select(-.cluster)
+```
+
+
+
+```{r}
+augmented %>% 
+  filter(k == 3) %>% 
+  ggplot(aes(x = visits_thousands,
+             y = expenditure_millions))+
+  geom_point(aes(colour = cluster_group))+
+  facet_wrap(~ k) +
+  labs(x = "\nVisits thousands",
+       y = "Expenditure millions",
+       title = "Expenditure vs Visits for Tourists from the USA",
+       subtitle = "Years: 2002 - 2019\n") + 
+  theme_minimal()
+```
+
+
+
+```{r}
+augmented %>% 
+  filter(k == 3) %>% 
+  filter(visits_thousands > 30)
+```
+
+
+```{r}
+augmented %>% 
+  filter(k == 3) %>%
+  count(cluster_group) %>% 
+  ggplot(aes(x = cluster_group,
+             y = n)) +
+  geom_col()
+```
+
+
+```{r}
+augmented %>% 
+  filter(k == 3) %>% 
+  group_by(cluster_group) %>% 
+  summarise(total_expenditure = sum(expenditure_millions)) %>% 
+  ggplot(aes(x = cluster_group,
+             y = total_expenditure)) +
+  geom_col() 
+```
+
+
+```{r}
+augmented %>% 
+  filter(k == 3) %>% 
+  group_by(cluster_group) %>% 
+  summarise(mean_expenditure = mean(expenditure_millions)) %>% 
+  ggplot(aes(x = cluster_group,
+             y = mean_expenditure)) +
+  geom_col()
+```
+
+
+```{r}
+augmented %>% 
+  filter(k == 3) %>% 
+  group_by(cluster_group) %>% 
+  summarise(total_visits = sum(visits_thousands)) %>% 
+  ggplot(aes(x = cluster_group,
+             y = total_visits)) +
+  geom_col() 
+```
+
+
+```{r}
+augmented %>% 
+  filter(k == 3) %>% 
+  group_by(cluster_group, age) %>% 
+  summarise(mean_expenditure = mean(expenditure_millions)) %>% 
+  ggplot(aes(x = age,
+             y = mean_expenditure)) +
+  geom_col() +
+  facet_wrap(~ cluster_group)
+```
+
+
+```{r}
+augmented %>% 
+  filter(k == 3) %>% 
+  group_by(cluster_group, age) %>% 
+  summarise(total_expenditure = sum(expenditure_millions)) %>% 
+  ggplot(aes(x = age,
+             y = total_expenditure)) +
+  geom_col() +
+  facet_wrap(~ cluster_group)
+```
+
+
+```{r}
+augmented %>% 
+  filter(k == 3) %>% 
+  group_by(cluster_group, age) %>% 
+  summarise(mean_visits = mean(visits_thousands)) %>% 
+  ggplot(aes(x = age,
+             y = mean_visits)) +
+  geom_col() +
+  facet_wrap(~ cluster_group)
+```
+
+
+```{r}
+augmented %>% 
+  filter(k == 3) %>% 
+  group_by(cluster_group, age) %>% 
+  summarise(total_visits = sum(visits_thousands)) %>% 
+  ggplot(aes(x = age,
+             y = total_visits)) +
+  geom_col() +
+  facet_wrap(~ cluster_group)
+```
+
+
+```{r}
+augmented %>% 
+  filter(k == 3) %>% 
+  group_by(cluster_group, purpose) %>% 
+  summarise(mean_expenditure = mean(expenditure_millions)) %>% 
+  ggplot(aes(x = purpose,
+             y = mean_expenditure)) +
+  geom_col() +
+  facet_wrap(~ cluster_group)
+```
+
+
+```{r}
+augmented %>% 
+  filter(k == 3) %>% 
+  group_by(cluster_group, purpose) %>% 
+  summarise(totql_expenditure = sum(expenditure_millions)) %>% 
+  ggplot(aes(x = purpose,
+             y = totql_expenditure)) +
+  geom_col() +
+  facet_wrap(~ cluster_group)
+```
+
+
+```{r}
+augmented %>% 
+  filter(k == 3) %>% 
+  group_by(cluster_group, purpose) %>% 
+  summarise(mean_visits = mean(visits_thousands)) %>% 
+  ggplot(aes(x = purpose,
+             y = mean_visits)) +
+  geom_col() +
+  facet_wrap(~ cluster_group)
+```
+
+
+```{r}
+augmented %>% 
+  filter(k == 3) %>% 
+  group_by(cluster_group, purpose) %>% 
+  summarise(total_visits = sum(visits_thousands)) %>% 
+  ggplot(aes(x = purpose,
+             y = total_visits)) +
+  geom_col() +
+  facet_wrap(~ cluster_group)
+```
+
+
+```{r}
+augmented %>% 
+  filter(k == 3) %>% 
+  group_by(cluster_group, duration) %>% 
+  count(duration) %>% 
+  ggplot(aes(x = duration,
+             y = n)) +
+  geom_col() +
+  facet_wrap(~ cluster_group)
+```
+
+
+```{r}
+augmented %>% 
+  filter(k == 3) %>% 
+  group_by(cluster_group, duration) %>% 
+  summarise(totql_expenditure = sum(expenditure_millions)) %>% 
+  ggplot(aes(x = duration,
+             y = totql_expenditure)) +
+  geom_col() +
+  facet_wrap(~ cluster_group)
+```
+
+
+```{r}
+augmented <- augmented %>%
+  select(-c(k, kclust, tidied, glanced))
+
+augmented
+```
+
+
+```{r}
+write_csv(augmented, "clean_data/usa.csv")
+```
+
+
+
+
+
+
+
